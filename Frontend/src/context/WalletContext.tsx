@@ -6,6 +6,10 @@ interface WalletContextType {
   setProvider: (provider: WalletProvider | undefined) => void;
   connectedAccount: string | undefined;
   setConnectedAccount: (account: string | undefined) => void;
+  isAgeVerified: boolean;
+  setIsAgeVerified: (verified: boolean) => void;
+  ageVerificationStatus: "pending" | "verifying" | "verified" | "failed" | null;
+  setAgeVerificationStatus: (status: "pending" | "verifying" | "verified" | "failed" | null) => void;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -19,10 +23,23 @@ export const WalletContextProvider: React.FC<{ children: ReactNode }> = ({
   const [connectedAccount, setConnectedAccount] = useState<string | undefined>(
     undefined
   );
+  const [isAgeVerified, setIsAgeVerified] = useState<boolean>(false);
+  const [ageVerificationStatus, setAgeVerificationStatus] = useState<
+    "pending" | "verifying" | "verified" | "failed" | null
+  >(null);
 
   return (
     <WalletContext.Provider
-      value={{ provider, setProvider, connectedAccount, setConnectedAccount }}
+      value={{ 
+        provider, 
+        setProvider, 
+        connectedAccount, 
+        setConnectedAccount,
+        isAgeVerified,
+        setIsAgeVerified,
+        ageVerificationStatus,
+        setAgeVerificationStatus
+      }}
     >
       {children}
     </WalletContext.Provider>
