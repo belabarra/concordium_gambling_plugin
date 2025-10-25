@@ -11,8 +11,13 @@ import {
   CredentialStatements,
   HexString,
 } from "@concordium/web-sdk";
+import { WalletConnectionProps } from "@concordium/react-components";
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  walletConnectionProps?: WalletConnectionProps; // Optional for future use
+}
+
+export const Header: React.FC<HeaderProps> = () => {
   const {
     provider,
     setProvider,
