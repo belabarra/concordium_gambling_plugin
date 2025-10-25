@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List
 import uuid
 from sqlalchemy.orm import Session
@@ -31,12 +31,11 @@ class NotificationService:
             notification_type=notification_type,
             title=title,
             message=message,
-            created_at=datetime.utcnow(),
-            status=NotificationStatus.PENDING,
-            metadata=data,
+            created_at=datetime.now(timezone.utc),
+            status='pending',
             priority=priority
         )
-        
+
         created = self.notification_repository.create_notification(notification)
         
         # TODO: Implement actual notification delivery (email, push, SMS)
@@ -50,38 +49,38 @@ class NotificationService:
         }
 
     async def send_operator_alert(
-        self, 
-        operator_id: str, 
-        user_id: str, 
-        alert_type: str,
-        data: dict
-    ) -> Dict:
-        """Alert operator about high-risk user behavior"""
-        # This would send alerts to the operator's dashboard/email
-        # For now, we'll create a notification record
-        
-        notification_id = str(uuid.uuid4())
-        
-        notification = Notification(
-            notification_id=notification_id,
-            user_id=f"operator_{operator_id}",
-            notification_type=NotificationType.RISK_ALERT,
-            title=f"Risk Alert: {alert_type}",
-            message=f"User {user_id} requires attention: {alert_type}",
-            created_at=datetime.utcnow(),
-            status=NotificationStatus.PENDING,
-            metadata={'operator_id': operator_id, 'user_id': user_id, 'alert_type': alert_type, **data},
-            priority='high'
-        )
-        
-        created = self.notification_repository.create_notification(notification)
-        created.mark_as_sent()
-        self.notification_repository.update_notification(created)
-        
-        return {
-            'success': True,
-            'notification': created.to_dict()
-        }
+            self, 
+            operator_id: str, 
+            user_id: str, 
+            alert_type: str,
+            data: dict
+        ) -> Dict:
+            """Alert operator about high-risk user behavior"""
+            # This would send alerts to the operator's dashboard/email
+            # For now, we'll create a notification record
+            
+            notification_id = str(uuid.uuid4())
+            
+            notification = Notification(
+                notification_id=notification_id,
+                user_id=f"operator_{operator_id}",
+                notification_type=NotificationType.RISK_ALERT,
+                title=f"Risk Alert: {alert_type}",
+                message=f"User {user_id} requires attention: {alert_type}",
+                created_at=datetime.now(timezone.utc),
+                status=NotificationStatus.PENDING,
+                metadata={'operator_id': operator_id, 'user_id': user_id, 'alert_type': alert_type, **data},
+                priority='high'
+            )
+            
+            created = self.notification_repository.create_notification(notification)
+            created.mark_as_sent()
+            self.notification_repository.update_notification(created)
+            
+            return {
+                'success': True,
+                'notification': created.to_dict()
+            }
 
     async def schedule_reminder(
         self, 
@@ -99,7 +98,7 @@ class NotificationService:
             notification_type=NotificationType.WELLNESS_TIP,
             title=f"Reminder: {reminder_type}",
             message=data.get('message', 'You have a scheduled reminder'),
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
             status=NotificationStatus.PENDING,
             metadata={'scheduled_for': when.isoformat(), 'reminder_type': reminder_type, **(data or {})},
             priority='normal'

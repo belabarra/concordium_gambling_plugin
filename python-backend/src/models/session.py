@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Float, Integer, DateTime, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 Base = declarative_base()
@@ -12,7 +12,7 @@ class Session(Base):
     session_id = Column(String, primary_key=True, index=True)
     user_id = Column(String, ForeignKey('users.id'), nullable=False, index=True)
     platform_id = Column(String, nullable=False, index=True)
-    start_time = Column(DateTime, nullable=False, default=datetime.utcnow)
+    start_time = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     end_time = Column(DateTime, nullable=True)
     total_wagered = Column(Float, default=0.0)
     total_won = Column(Float, default=0.0)
@@ -44,7 +44,7 @@ class Session(Base):
         if self.end_time:
             delta = self.end_time - self.start_time
         else:
-            delta = datetime.utcnow() - self.start_time
+            delta = datetime.now(timezone.utc) - self.start_time
         return delta.total_seconds() / 60
 
     def net_result(self) -> float:

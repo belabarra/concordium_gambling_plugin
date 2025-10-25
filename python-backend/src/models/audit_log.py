@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, DateTime, JSON, Text
 from sqlalchemy.ext.declarative import declarative_base
-from datetime import datetime
+from datetime import datetime, timezone
 
 Base = declarative_base()
 
@@ -9,7 +9,7 @@ class AuditLog(Base):
     __tablename__ = 'audit_logs'
 
     log_id = Column(String, primary_key=True, index=True)
-    timestamp = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+    timestamp = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
     action_type = Column(String, nullable=False, index=True)  # login, transaction, limit_set, exclusion, etc.
     user_id = Column(String, nullable=True, index=True)
     operator_id = Column(String, nullable=True, index=True)

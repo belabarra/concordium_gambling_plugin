@@ -219,3 +219,97 @@ class BlockchainIntegrationService:
                 "currency": currency,
                 "mock": True
             }
+    
+    async def get_wallet_balance(self, address: str) -> Dict[str, Any]:
+        """Get wallet balance by Concordium address"""
+        try:
+            health = await self.check_service_health()
+            if not health.get('available'):
+                return {
+                    "success": True,
+                    "balance": 0.0,
+                    "currency": "CCD",
+                    "mock": True
+                }
+            
+            response = requests.get(
+                f"{self.blockchain_api_url}/api/concordium/wallet/{address}/balance",
+                headers=self._get_headers(),
+                timeout=self.timeout
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                return {
+                    "success": True,
+                    "balance": data.get('balance', 0.0),
+                    "currency": "CCD",
+                    "data": data
+                }
+            return {
+                "success": False,
+                "error": f"Failed to get wallet balance with status {response.status_code}"
+            }
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to get wallet balance: {e}")
+            return {
+                "success": True,
+                "balance": 0.0,
+                "currency": "CCD",
+                "mock": True
+            }
+    
+    async def transfer_funds(
+        self,
+        from_address: str,
+        to_address: str,
+        amount: float,
+        memo: str = None
+    ) -> Dict[str, Any]:
+        """Transfer funds between Concordium addresses"""
+        try:
+            health = await self.check_service_health()
+            if not health.get('available'):
+                logger.warning("Concordium service not available, funds not transferred")
+                return {
+                    "success": True,
+                    "transaction_hash": f"mock_tx_{from_address[:8]}_{to_address[:8]}",
+                    "mock": True,
+                    "message": "Mock transfer - Concordium service not available"
+                }
+            
+            payload = {
+                "from_address": from_address,
+                "to_address": to_address,
+                "amount": amount,
+                "memo": memo
+            }
+            
+            response = requests.post(
+                f"{self.blockchain_api_url}/api/concordium/transfer",
+                json=payload,
+                headers=self._get_headers(),
+                timeout=self.timeout
+            )
+            
+            if response.status_code in [200, 201]:
+                data = response.json()
+                return {
+                    "success": True,
+                    "transaction_hash": data.get('transaction_hash'),
+                    "data": data
+                }
+            return {
+                "success": False,
+                "error": f"Transfer failed with status {response.status_code}"
+            }
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Failed to transfer funds: {e}")
+            return {
+                "success": True,
+                "transaction_hash": f"mock_tx_{from_address[:8]}_{to_address[:8]}",
+                "mock": True,
+                "message": "Mock transfer - Service unavailable"
+            }

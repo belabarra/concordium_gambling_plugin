@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Float, DateTime, JSON, Enum as SQLEnum
 from sqlalchemy.ext.declarative import declarative_base
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Dict, List
 
@@ -22,7 +22,7 @@ class RiskAssessment(Base):
     risk_score = Column(Float, nullable=False)  # 0-100
     risk_level = Column(SQLEnum(RiskLevel), nullable=False)
     factors = Column(JSON, nullable=False)  # Contributing factors as dict
-    assessed_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    assessed_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     recommendations = Column(JSON, nullable=True)  # List of recommendations
     previous_score = Column(Float, nullable=True)
     trend = Column(String, nullable=True)  # improving, stable, worsening

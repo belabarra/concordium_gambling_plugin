@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional
 from sqlalchemy.orm import Session
 from models.cooldown import Cooldown
@@ -9,7 +9,7 @@ class CooldownService:
 
     async def set_cooldown(self, user_id: str, duration_minutes: int) -> Dict:
         """Set a cooldown period for a user"""
-        end_time = datetime.utcnow() + timedelta(minutes=duration_minutes)
+        end_time = datetime.now(timezone.utc) + timedelta(minutes=duration_minutes)
         
         # Check if cooldown already exists
         existing = self.db.query(Cooldown).filter(Cooldown.user_id == user_id).first()
@@ -22,7 +22,7 @@ class CooldownService:
         else:
             cooldown = Cooldown(
                 user_id=user_id,
-                start_time=datetime.utcnow(),
+                start_time=datetime.now(timezone.utc),
                 end_time=end_time,
                 duration_minutes=duration_minutes
             )
@@ -38,7 +38,7 @@ class CooldownService:
         """Check if user is currently on cooldown"""
         cooldown = self.db.query(Cooldown).filter(
             Cooldown.user_id == user_id,
-            Cooldown.end_time > datetime.utcnow()
+            Cooldown.end_time > datetime.now(timezone.utc)
         ).first()
         
         return cooldown is not None
@@ -47,7 +47,7 @@ class CooldownService:
         """Get the end time of user's cooldown"""
         cooldown = self.db.query(Cooldown).filter(
             Cooldown.user_id == user_id,
-            Cooldown.end_time > datetime.utcnow()
+            Cooldown.end_time > datetime.now(timezone.utc)
         ).first()
         
         return cooldown.end_time if cooldown else None

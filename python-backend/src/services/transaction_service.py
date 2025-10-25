@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, Dict
 import uuid
 from sqlalchemy.orm import Session
@@ -35,7 +35,7 @@ class TransactionService:
             transaction_id=self.generate_transaction_id(),
             user_id=user_id,
             amount=amount,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             **{k: v for k, v in transaction_data.items() if k not in ['user_id', 'amount']}
         )
         

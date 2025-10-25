@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, DateTime, JSON, Enum as SQLEnum
 from sqlalchemy.ext.declarative import declarative_base
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 Base = declarative_base()
@@ -35,7 +35,7 @@ class Notification(Base):
     notification_type = Column(SQLEnum(NotificationType), nullable=False)
     title = Column(String, nullable=False)
     message = Column(String, nullable=False)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     sent_at = Column(DateTime, nullable=True)
     read_at = Column(DateTime, nullable=True)
     status = Column(SQLEnum(NotificationStatus), nullable=False, default=NotificationStatus.PENDING)
@@ -63,9 +63,9 @@ class Notification(Base):
     def mark_as_sent(self):
         """Mark notification as sent"""
         self.status = NotificationStatus.SENT
-        self.sent_at = datetime.utcnow()
+        self.sent_at = datetime.now(timezone.utc)
 
     def mark_as_read(self):
         """Mark notification as read"""
         self.status = NotificationStatus.READ
-        self.read_at = datetime.utcnow()
+        self.read_at = datetime.now(timezone.utc)

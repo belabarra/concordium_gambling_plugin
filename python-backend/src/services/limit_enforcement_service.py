@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional
 from sqlalchemy.orm import Session
 from models.limit import Limit
@@ -19,7 +19,7 @@ class LimitEnforcementService:
             }
         
         # Calculate current spending in the limit period
-        period_start = datetime.utcnow() - timedelta(days=limit.period_days or 1)
+        period_start = datetime.now(timezone.utc) - timedelta(days=limit.period_days or 1)
         current_spending = self.db.query(Transaction).filter(
             Transaction.user_id == user_id,
             Transaction.timestamp >= period_start

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from models.notification import Notification, NotificationStatus
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 class NotificationRepository:
     """Repository for notification data access"""
@@ -67,7 +67,7 @@ class NotificationRepository:
             Notification.status != NotificationStatus.READ
         ).update({
             'status': NotificationStatus.READ,
-            'read_at': datetime.utcnow()
+            'read_at': datetime.now(timezone.utc)
         })
         self.db.commit()
         return count
