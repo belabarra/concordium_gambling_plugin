@@ -1,9 +1,11 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
+import express, { Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT: number = parseInt(process.env.PORT || '3000', 10);
 
 // Middleware
 app.use(cors());
@@ -11,7 +13,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.get('/', (req, res) => {
+app.get('/', (req: Request, res: Response) => {
   res.json({ 
     message: 'Welcome to Concordium Gambling Backend API',
     status: 'running',
@@ -19,7 +21,7 @@ app.get('/', (req, res) => {
   });
 });
 
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (req: Request, res: Response) => {
   res.json({ 
     status: 'healthy',
     uptime: process.uptime(),
@@ -28,7 +30,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Example API endpoint
-app.get('/api/example', (req, res) => {
+app.get('/api/example', (req: Request, res: Response) => {
   res.json({ 
     message: 'This is an example endpoint',
     data: { example: 'value' }
@@ -36,7 +38,7 @@ app.get('/api/example', (req, res) => {
 });
 
 // Error handling middleware
-app.use((err, req, res, next) => {
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error(err.stack);
   res.status(500).json({ 
     error: 'Something went wrong!',
@@ -45,7 +47,7 @@ app.use((err, req, res, next) => {
 });
 
 // 404 handler
-app.use((req, res) => {
+app.use((req: Request, res: Response) => {
   res.status(404).json({ 
     error: 'Route not found',
     path: req.path 
