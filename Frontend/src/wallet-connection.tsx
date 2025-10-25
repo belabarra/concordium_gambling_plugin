@@ -163,15 +163,15 @@ export class WalletConnectProvider extends WalletProvider {
     // Serialize the parameters
     const serializedParams = JSON.stringify({
       challenge,
-      credentialStatements: statement.value.map(({ statement, idQualifier }) => ({
-        idQualifier: { type: idQualifier.type, ...idQualifier },
-        statement: statement.map(({ attributeTag, type, ...rest }) => ({
+      credentialStatements: statement.map(({ statement: statementItems, idQualifier }) => ({
+        idQualifier: { ...idQualifier },
+        statement: statementItems.map(({ attributeTag, type, ...rest }) => ({
           attributeTag,
           type,
           ...Object.fromEntries(
             Object.entries(rest).map(([key, value]) => [
               key,
-              toBuffer(serializeTypeValue(value, type), "hex"),
+              toBuffer(serializeTypeValue(value as any, type), "hex"),
             ]),
           ),
         })),
@@ -189,7 +189,7 @@ export class WalletConnectProvider extends WalletProvider {
       });
 
       return VerifiablePresentation.fromString(
-        result.verifiablePresentationJson,
+        (result as any).verifiablePresentationJson,
       );
     } catch (e) {
       if (isWalletConnectError(e)) {

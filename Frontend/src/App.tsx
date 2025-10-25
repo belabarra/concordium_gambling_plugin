@@ -1,5 +1,6 @@
 import React from "react";
 import { Header } from "./components/Header";
+import { HorseRacing } from "./components/HorseRacing";
 import { WalletContextProvider } from "./context/WalletContext";
 import "./App.css";
 
@@ -9,10 +10,7 @@ function App() {
       <div className="app">
         <Header />
         <main className="main-content">
-          <div className="content-container">
-            <h2>Welcome to Concordium Gambling dApp</h2>
-            <p>Connect your wallet to get started!</p>
-          </div>
+          <HorseRacing />
         </main>
       </div>
     </WalletContextProvider>
