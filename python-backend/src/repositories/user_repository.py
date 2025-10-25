@@ -1,52 +1,71 @@
 from sqlalchemy import Column, Integer, String, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session
+from models.user import User
+from typing import Optional, List
+
+
 
 Base = declarative_base()
 
-class User(Base):
-    __tablename__ = 'users'
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    age = Column(Integer)
-    self_excluded = Column(Boolean, default=False)
 
 class UserRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def create_user(self, name: str, age: int) -> User:
-        new_user = User(name=name, age=age)
-        self.db.add(new_user)
-        self.db.commit()
-        self.db.refresh(new_user)
-        return new_user
+    def create_user(self, user: User) -> User:
+        """Create a new user (expects User object)"""
 
-    def get_user(self, user_id: int) -> User:
-        return self.db.query(User).filter(User.id == user_id).first()
-
-    def update_user(self, user_id: int, name: str = None, age: int = None) -> User:
-        user = self.get_user(user_id)
-        if user:
-            if name is not None:
-                user.name = name
-            if age is not None:
-                user.age = age
-            self.db.commit()
-            self.db.refresh(user)
+        
+        self.db.add(user)  #add to database
+        self.db.commit() #save
+        self.db.refresh(user) #get updated data from database
         return user
 
-    def delete_user(self, user_id: int) -> None:
+    
+    def get_user_by_wallet(self, wallet_address: str) -> Optional[User]:
+        """Get user by wallet address"""
+        return self.db.query(User).filter(
+        User.wallet_address == wallet_address
+        ).first()
+
+    
+    def update_user(self, user: User) -> User:
+        """Update user (expects User object that's already been modified)"""
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
+    
+    def delete_user(self, user_id: int) -> bool:
+        """Delete user by ID"""
         user = self.get_user(user_id)
         if user:
             self.db.delete(user)
             self.db.commit()
+            return True
+        return False
 
     def set_self_exclusion(self, user_id: int, status: bool) -> User:
+        """Set self-exclusion status"""
+
         user = self.get_user(user_id)
         if user:
             user.self_excluded = status
             self.db.commit()
             self.db.refresh(user)
         return user
+    
+    def update_last_login(self, user_id: int) -> Optional[User]:
+        """Update last login timestamp"""
+        user = self.get_user(user_id)
+        if user:
+            user.last_login = datetime.utcnow()
+            self.db.commit()
+            self.db.refresh(user)
+        return user
+    
+    def get_all_users(self) -> List[User]:
+        """Get all users"""
+        return self.db.query(User).all()
+    
