@@ -1,0 +1,18 @@
+# Logs Directory
+
+This directory contains log files from the running services.
+
+- `node-backend.log` - Node.js Concordium service logs
+- `python-backend.log` - Python FastAPI backend logs
+
+To view logs in real-time:
+
+```bash
+# macOS/Linux
+tail -f logs/node-backend.log
+tail -f logs/python-backend.log
+
+# Windows
+type logs\node-backend.log
+type logs\python-backend.log
+```

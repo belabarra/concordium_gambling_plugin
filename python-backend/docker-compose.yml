@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # Node.js Concordium Service
+  concordium-service:
+    build: ../node-backend
+    container_name: concordium-service
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+    volumes:
+      - ../node-backend/src:/app/src
+    command: npm run dev
+    networks:
+      - gambling-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Python Backend
+  python-backend:
+    build: .
+    container_name: python-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/responsible_gambling
+      - CONCORDIUM_SERVICE_URL=http://concordium-service:3000
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DEBUG=True
+    depends_on:
+      - db
+      - concordium-service
+    volumes:
+      - ./src:/app/src
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - gambling-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: postgres-db
+    environment:
+      - POSTGRES_DB=responsible_gambling
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - gambling-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  gambling-network:
+    driver: bridge

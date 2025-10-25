@@ -1,40 +1,57 @@
-from flask import request, jsonify
+from fastapi import Request, HTTPException, status
+from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 import logging
+import time
 
 # Set up logging
-logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-def log_request(func):
-    def wrapper(*args, **kwargs):
-        logging.info(f"Request: {request.method} {request.path}")
-        return func(*args, **kwargs)
-    return wrapper
-
-def error_handling(func):
-    def wrapper(*args, **kwargs):
+class LoggingMiddleware(BaseHTTPMiddleware):
+    """Middleware to log all requests"""
+    
+    async def dispatch(self, request: Request, call_next):
+        start_time = time.time()
+        
+        # Log request
+        logger.info(f"Request: {request.method} {request.url.path}")
+        
         try:
-            return func(*args, **kwargs)
+            response = await call_next(request)
+            
+            # Log response time
+            process_time = time.time() - start_time
+            logger.info(f"Completed: {request.method} {request.url.path} - {response.status_code} - {process_time:.3f}s")
+            
+            return response
         except Exception as e:
-            logging.error(f"Error: {str(e)}")
-            return jsonify({"error": "An error occurred"}), 500
-    return wrapper
+            logger.error(f"Error processing request: {str(e)}")
+            raise
 
-def authenticate_user(func):
-    def wrapper(*args, **kwargs):
-        token = request.headers.get('Authorization')
-        if not token or not validate_token(token):
-            return jsonify({"error": "Unauthorized"}), 401
-        return func(*args, **kwargs)
-    return wrapper
+class ErrorHandlingMiddleware(BaseHTTPMiddleware):
+    """Middleware to handle errors globally"""
+    
+    async def dispatch(self, request: Request, call_next):
+        try:
+            return await call_next(request)
+        except HTTPException:
+            # Re-raise HTTP exceptions
+            raise
+        except Exception as e:
+            logger.error(f"Unhandled error: {str(e)}", exc_info=True)
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content={"error": "An internal error occurred"}
+            )
 
-def validate_token(token):
-    # Placeholder for token validation logic
-    return True  # Implement actual validation logic here
+def validate_token(token: str) -> bool:
+    """Validate authentication token"""
+    # TODO: Implement actual token validation logic
+    # For now, accept any non-empty token
+    return bool(token)
 
-# Example of how to use the middleware
-# @app.route('/some_endpoint', methods=['GET'])
-# @log_request
-# @error_handling
-# @authenticate_user
-# def some_endpoint():
-#     return jsonify({"message": "Success"})
+# Example of how to add middleware to FastAPI app:
+# from fastapi import FastAPI
+# app = FastAPI()
+# app.add_middleware(LoggingMiddleware)
+# app.add_middleware(ErrorHandlingMiddleware)

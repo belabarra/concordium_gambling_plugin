@@ -1,36 +1,108 @@
 from datetime import datetime, timedelta
+from typing import Dict, Optional
+from sqlalchemy.orm import Session
 from models.limit import Limit
-from repositories.user_repository import UserRepository
+from models.transaction import Transaction
 
 class LimitEnforcementService:
-    def __init__(self):
-        self.user_repository = UserRepository()
+    def __init__(self, db: Session):
+        self.db = db
 
-    def enforce_limit(self, user_id: str, transaction_amount: float) -> bool:
-        user = self.user_repository.get_user_by_id(user_id)
-        if not user:
-            raise ValueError("User not found")
-
-        limit = self.user_repository.get_limit_for_user(user_id)
+    async def check_limit(self, user_id: str, transaction_amount: float) -> Dict:
+        """Check if transaction would exceed user's spending limit"""
+        limit = self.db.query(Limit).filter(Limit.user_id == user_id).first()
+        
         if not limit:
-            raise ValueError("Limit not set for user")
+            return {
+                'allowed': True,
+                'reason': 'No limit set for user'
+            }
+        
+        # Calculate current spending in the limit period
+        period_start = datetime.utcnow() - timedelta(days=limit.period_days or 1)
+        current_spending = self.db.query(Transaction).filter(
+            Transaction.user_id == user_id,
+            Transaction.timestamp >= period_start
+        ).with_entities(
+            Transaction.amount
+        ).all()
+        
+        total_spent = sum(t[0] for t in current_spending)
+        new_total = total_spent + transaction_amount
+        
+        if new_total > limit.amount:
+            return {
+                'allowed': False,
+                'reason': 'Spending limit exceeded',
+                'limit': limit.amount,
+                'current_spending': total_spent,
+                'requested_amount': transaction_amount,
+                'would_be_total': new_total
+            }
+        
+        return {
+            'allowed': True,
+            'limit': limit.amount,
+            'current_spending': total_spent,
+            'remaining': limit.amount - new_total
+        }
 
-        current_spending = self.user_repository.get_current_spending(user_id)
-        new_spending = current_spending + transaction_amount
+    async def set_limit(self, user_id: str, amount: float, limit_type: str = 'daily', period_days: int = 1) -> Dict:
+        """Set spending limit for a user"""
+        existing = self.db.query(Limit).filter(
+            Limit.user_id == user_id,
+            Limit.limit_type == limit_type
+        ).first()
+        
+        if existing:
+            existing.amount = amount
+            existing.period_days = period_days
+            self.db.commit()
+            limit = existing
+        else:
+            limit = Limit(
+                user_id=user_id,
+                amount=amount,
+                limit_type=limit_type,
+                period_days=period_days
+            )
+            self.db.add(limit)
+            self.db.commit()
+        
+        return {
+            'success': True,
+            'limit': {
+                'amount': limit.amount,
+                'type': limit.limit_type,
+                'period_days': limit.period_days
+            }
+        }
 
-        if new_spending > limit.spending_limit:
-            return False  # Limit exceeded
+    async def get_limit(self, user_id: str, limit_type: str = 'daily') -> Optional[Dict]:
+        """Get user's spending limit"""
+        limit = self.db.query(Limit).filter(
+            Limit.user_id == user_id,
+            Limit.limit_type == limit_type
+        ).first()
+        
+        if not limit:
+            return None
+        
+        return {
+            'amount': limit.amount,
+            'type': limit.limit_type,
+            'period_days': limit.period_days
+        }
 
-        self.user_repository.update_current_spending(user_id, new_spending)
-        return True  # Limit not exceeded
-
-    def set_limit(self, user_id: str, spending_limit: float):
-        limit = Limit(user_id=user_id, spending_limit=spending_limit)
-        self.user_repository.save_limit(limit)
-
-    def get_limit(self, user_id: str) -> float:
-        limit = self.user_repository.get_limit_for_user(user_id)
-        return limit.spending_limit if limit else 0.0
-
-    def reset_limit(self, user_id: str):
-        self.user_repository.reset_current_spending(user_id)
+    async def remove_limit(self, user_id: str, limit_type: str = 'daily') -> Dict:
+        """Remove spending limit for a user"""
+        result = self.db.query(Limit).filter(
+            Limit.user_id == user_id,
+            Limit.limit_type == limit_type
+        ).delete()
+        self.db.commit()
+        
+        return {
+            'success': result > 0,
+            'removed': result
+        }
