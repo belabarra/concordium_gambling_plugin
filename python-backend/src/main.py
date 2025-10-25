@@ -5,6 +5,7 @@ import logging
 import uvicorn
 
 from src.api.routes import api_router
+from src.api.payment_routes import router as payment_router
 from src.api.middleware import LoggingMiddleware, ErrorHandlingMiddleware
 from src.config.settings import settings
 from src.config.database import init_db
@@ -61,6 +62,7 @@ app.add_middleware(ErrorHandlingMiddleware)
 
 # Include the API routes
 app.include_router(api_router)
+app.include_router(payment_router)
 
 @app.get("/")
 def read_root():
