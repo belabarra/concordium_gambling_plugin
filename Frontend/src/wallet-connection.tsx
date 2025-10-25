@@ -6,9 +6,13 @@ import {
   HexString,
   CredentialStatements,
   VerifiablePresentation,
+  AccountAddress,
+  AccountTransactionType,
+  AccountTransactionHeader,
+  AccountTransactionPayload,
 } from "@concordium/web-sdk";
 import SignClient from "@walletconnect/sign-client";
-import { SessionTypes } from "@walletconnect/types";
+import type { SessionTypes } from "@walletconnect/sign-client";
 import QRCodeModal from "@walletconnect/qrcode-modal";
 
 // Abstract wallet provider class
@@ -26,6 +30,14 @@ export abstract class WalletProvider extends EventEmitter {
     challenge: HexString,
     statement: CredentialStatements,
   ): Promise<VerifiablePresentation>;
+
+  // Sign and send transaction
+  abstract signAndSendTransaction(
+    accountAddress: AccountAddress.Type,
+    type: AccountTransactionType,
+    payload: AccountTransactionPayload,
+    header: AccountTransactionHeader
+  ): Promise<string>;
 
   // Update state and emit event when account changes
   protected onAccountChanged(new_account: string | undefined) {
@@ -77,6 +89,23 @@ export class BrowserWalletProvider extends WalletProvider {
       challenge,
       statement,
     );
+  }
+
+  // Sign and send transaction through browser wallet
+  async signAndSendTransaction(
+    accountAddress: AccountAddress.Type,
+    type: AccountTransactionType,
+    payload: AccountTransactionPayload,
+    header: AccountTransactionHeader
+  ): Promise<string> {
+    // Browser wallet API expects specific format
+    const txHash = await this.provider.sendTransaction(
+      AccountAddress.toBase58(accountAddress),
+      type,
+      payload as any,
+      header as any
+    );
+    return txHash;
   }
 }
 
@@ -163,15 +192,15 @@ export class WalletConnectProvider extends WalletProvider {
     // Serialize the parameters
     const serializedParams = JSON.stringify({
       challenge,
-      credentialStatements: statement.value.map(({ statement, idQualifier }) => ({
-        idQualifier: { type: idQualifier.type, ...idQualifier },
-        statement: statement.map(({ attributeTag, type, ...rest }) => ({
+      credentialStatements: statement.map(({ statement: statementItems, idQualifier }) => ({
+        idQualifier: { ...idQualifier },
+        statement: statementItems.map(({ attributeTag, type, ...rest }) => ({
           attributeTag,
           type,
           ...Object.fromEntries(
             Object.entries(rest).map(([key, value]) => [
               key,
-              toBuffer(serializeTypeValue(value, type), "hex"),
+              toBuffer(serializeTypeValue(value as any, type), "hex"),
             ]),
           ),
         })),
@@ -189,7 +218,7 @@ export class WalletConnectProvider extends WalletProvider {
       });
 
       return VerifiablePresentation.fromString(
-        result.verifiablePresentationJson,
+        (result as any).verifiablePresentationJson,
       );
     } catch (e) {
       if (isWalletConnectError(e)) {
@@ -218,6 +247,53 @@ export class WalletConnectProvider extends WalletProvider {
     this.connectedAccount = undefined;
     this.topic = undefined;
     super.onAccountChanged(this.connectedAccount);
+  }
+
+  // Sign and send transaction through WalletConnect
+  async signAndSendTransaction(
+    accountAddress: AccountAddress.Type,
+    type: AccountTransactionType,
+    payload: AccountTransactionPayload,
+    header: AccountTransactionHeader
+  ): Promise<string> {
+    if (this.topic === undefined) {
+      throw new Error("Not connected to wallet");
+    }
+
+    // Serialize the transaction for WalletConnect
+    const serializedPayload = JSON.stringify({
+      type,
+      payload,
+      header: {
+        ...header,
+        expiry: header.expiry.expiryEpochSeconds.toString(),
+        nonce: header.nonce.toString(),
+        sender: AccountAddress.toBase58(header.sender),
+      }
+    });
+
+    try {
+      const result = await this.client.request({
+        topic: this.topic,
+        request: {
+          method: "sign_and_send_transaction",
+          params: {
+            transaction: serializedPayload,
+            address: AccountAddress.toBase58(accountAddress),
+          },
+        },
+        chainId: "ccd:testnet",
+      });
+
+      return (result as any).transactionHash || result;
+    } catch (e) {
+      if (isWalletConnectError(e)) {
+        throw new Error(
+          "Transaction rejected in wallet: " + JSON.stringify(e)
+        );
+      }
+      throw e;
+    }
   }
 
   // Helper to extract Concordium account from WalletConnect namespaces

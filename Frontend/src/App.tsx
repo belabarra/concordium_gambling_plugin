@@ -1,21 +1,32 @@
 import React from "react";
 import { Header } from "./components/Header";
+import { HorseRacing } from "./components/HorseRacing";
 import { WalletContextProvider } from "./context/WalletContext";
+import { 
+  WithWalletConnector, 
+  WalletConnectionProps,
+  TESTNET 
+} from "@concordium/react-components";
 import "./App.css";
 
-function App() {
+function AppContent(props: WalletConnectionProps) {
   return (
     <WalletContextProvider>
       <div className="app">
-        <Header />
+        <Header walletConnectionProps={props} />
         <main className="main-content">
-          <div className="content-container">
-            <h2>Welcome to Concordium Gambling dApp</h2>
-            <p>Connect your wallet to get started!</p>
-          </div>
+          <HorseRacing walletConnectionProps={props} />
         </main>
       </div>
     </WalletContextProvider>
+  );
+}
+
+function App() {
+  return (
+    <WithWalletConnector network={TESTNET}>
+      {(props) => <AppContent {...props} />}
+    </WithWalletConnector>
   );
 }
 

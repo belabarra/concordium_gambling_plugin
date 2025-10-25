@@ -1,0 +1,133 @@
+.App {
+  text-align: center;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: linear-gradient(180deg, #0f1724 0%, #0b1220 100%);
+  min-height: 100vh;
+  color: #e6eef8;
+}
+
+.container {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 48px 20px;
+}
+
+.App-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+h1 {
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  letter-spacing: 0.6px;
+}
+
+.subtitle {
+  color: #9fb6d8;
+  margin-bottom: 8px;
+}
+
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow: 0 6px 18px rgba(2,6,23,0.6);
+  border-radius: 12px;
+  padding: 18px;
+  width: 100%;
+  max-width: 720px;
+  margin: 12px 0;
+  text-align: left;
+}
+
+.rg-card {
+  padding-bottom: 12px;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+label { display: block; font-size: 14px; color: #cfe6ff; }
+
+.input, input[type="date"], input[type="number"], select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
+  color: #e6eef8;
+  outline: none;
+}
+
+.input:focus, input:focus, select:focus { box-shadow: 0 0 0 3px rgba(97,175,255,0.08); border-color: rgba(97,175,255,0.4); }
+
+.btn {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  background: rgba(97,175,255,0.18);
+  color: #dff3ff;
+  font-weight: 600;
+}
+
+.btn.primary { background: linear-gradient(90deg,#4ea8ff,#3b82f6); box-shadow: 0 6px 18px rgba(59,130,246,0.18); }
+.btn.ghost { background: transparent; border: 1px solid rgba(255,255,255,0.06); }
+
+.muted { color: #9fb6d8; font-size: 13px; }
+
+.warning { color: #ffb454; font-weight: 700; }
+.danger { color: #ff6b6b; font-weight: 800; }
+
+@media (max-width: 640px) {
+  .container { padding: 28px 12px; }
+  .card { padding: 14px; }
+}
+.chart-legend { display:flex; gap:8px; align-items:center; margin-top:8px; }
+.legend-item { display:flex; gap:6px; align-items:center; font-size:13px; color:#cfe6ff }
+.legend-swatch { width:12px; height:12px; border-radius:3px; }
+.legend-win { background: linear-gradient(90deg,#10b981,#34d399); }
+.legend-loss { background: linear-gradient(90deg,#f97316,#ef4444); }
+
+/* Result animation badge */
+.result-badge {
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: 14px;
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.5);
+  transform-origin: center;
+  animation: pop 360ms cubic-bezier(.2,.9,.2,1);
+}
+.result-badge.win { background: linear-gradient(90deg,#10b981,#34d399); }
+.result-badge.loss { background: linear-gradient(90deg,#f97316,#ef4444); }
+
+@keyframes pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+/* Simple bar chart for recent bets */
+.chart { width: 100%; height: 220px; display: block; overflow: visible; }
+.bar-rect { transform-origin: bottom; transform: scaleY(0); animation: barGrow 600ms ease forwards; }
+.bar-rect.win { fill: #34d399; }
+.bar-rect.loss { fill: #fb7185; }
+
+@keyframes barGrow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+.chart-legend { display:flex; gap:8px; align-items:center; margin-top:8px; }
+.legend-item { display:flex; gap:6px; align-items:center; font-size:13px; color:#cfe6ff }
+.legend-swatch { width:12px; height:12px; border-radius:3px; }
+.legend-win { background: linear-gradient(90deg,#10b981,#34d399); }
+.legend-loss { background: linear-gradient(90deg,#f97316,#ef4444); }
