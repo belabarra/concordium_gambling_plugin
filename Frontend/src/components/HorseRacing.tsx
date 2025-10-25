@@ -1,7 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useWallet } from "../context/WalletContext";
 import { Trophy, Coins, Play, RotateCcw, RefreshCw } from "lucide-react";
-import { ConcordiumGRPCWebClient, AccountAddress } from "@concordium/web-sdk";
+import { 
+  AccountAddress, 
+  CcdAmount,
+  AccountTransactionType,
+  TransactionExpiry,
+  AccountTransactionHeader,
+  SimpleTransferPayload
+} from "@concordium/web-sdk";
+import { 
+  useGrpcClient, 
+  WalletConnectionProps 
+} from "@concordium/react-components";
 import "./HorseRacing.css";
 
 interface Horse {
@@ -18,8 +29,14 @@ interface Bet {
   amount: number;
 }
 
-export const HorseRacing: React.FC = () => {
+interface HorseRacingProps {
+  walletConnectionProps: WalletConnectionProps;
+}
+
+export const HorseRacing: React.FC<HorseRacingProps> = ({ walletConnectionProps }) => {
   const { connectedAccount, isAgeVerified, provider } = useWallet();
+  const { network } = walletConnectionProps;
+  const grpcClient = useGrpcClient(network);
   
   // Initial horses setup
   const initialHorses: Horse[] = [
@@ -39,13 +56,19 @@ export const HorseRacing: React.FC = () => {
   const [isLoadingBalance, setIsLoadingBalance] = useState<boolean>(false);
   const [currentBet, setCurrentBet] = useState<Bet | null>(null);
   const [raceHistory, setRaceHistory] = useState<string[]>([]);
+  const [isSendingTransaction, setIsSendingTransaction] = useState(false);
+  const [transactionHash, setTransactionHash] = useState<string | null>(null);
   
   const raceIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const finishLine = 100;
+  
+  // House account where bets are sent
+  const HOUSE_ACCOUNT = "37vNr2Nv4igJfc23M3BKrw5gD6A2nyNQC5o9XHr3zFUGKAK7xq";
 
-  // Fetch account balance from the blockchain
+  // Fetch account balance from the blockchain using the gRPC client
   const fetchBalance = async () => {
-    if (!connectedAccount || !provider) {
+	console.log(grpcClient)
+    if (!connectedAccount || !grpcClient) {
       setBalance(null);
       return;
     }
@@ -56,31 +79,21 @@ export const HorseRacing: React.FC = () => {
     const cachedBalanceKey = `balance_${connectedAccount}`;
     const cached = localStorage.getItem(cachedBalanceKey);
     
-    if (cached) {
-      const { balance: cachedBalance, timestamp } = JSON.parse(cached);
-      const fiveMinutes = 5 * 60 * 1000;
-      
-      if (Date.now() - timestamp < fiveMinutes) {
-        setBalance(cachedBalance);
-        setIsLoadingBalance(false);
-        return;
-      }
-    }
+    
 
     try {
-      // Try to fetch from gRPC endpoint
-      const grpcClient = new ConcordiumGRPCWebClient(
-        "https://grpc.testnet.concordium.com:20000",
-        443,
-        { timeout: 15000 }
-      );
-      
+      // Fetch from blockchain using the gRPC client from react-components
       const accountAddress = AccountAddress.fromBase58(connectedAccount);
       const accountInfo = await grpcClient.getAccountInfo(accountAddress);
       
-      // Convert microCCD to CCD (1 CCD = 1,000,000 microCCD)
+      console.log('Account Info:', accountInfo);
+      
+      // Convert microCCD to CCD - accountAmount is already in microCCD format
       const balanceInMicroCCD = accountInfo.accountAmount.microCcdAmount;
       const balanceInCCD = Number(balanceInMicroCCD) / 1_000_000;
+      
+      console.log('Balance in microCCD:', balanceInMicroCCD);
+      console.log('Balance in CCD:', balanceInCCD);
       
       setBalance(balanceInCCD);
       
@@ -90,47 +103,121 @@ export const HorseRacing: React.FC = () => {
         timestamp: Date.now()
       }));
       
-      console.log(`Account balance: ${balanceInCCD} CCD`);
+      console.log(`✅ Account balance fetched: ${balanceInCCD} CCD`);
     } catch (error) {
       console.error("Error fetching balance:", error);
       
-      // Use demo balance for frontend testing
-      // In production, you would need a backend proxy to query the blockchain
-      const demoBalance = 1000; // Demo balance for testing
+      // Use demo balance for frontend testing if gRPC fails
+      const demoBalance = 1000;
       setBalance(demoBalance);
       
-      console.warn(`Using demo balance: ${demoBalance} CCD. To use real balance, implement a backend proxy for gRPC calls.`);
+      console.warn(`Using demo balance: ${demoBalance} CCD. Error: ${error}`);
     } finally {
       setIsLoadingBalance(false);
     }
   };
 
-  // Fetch balance when account changes
+  // Fetch balance when account or gRPC client changes
   useEffect(() => {
-    if (connectedAccount && isAgeVerified) {
+    if (connectedAccount && isAgeVerified && grpcClient) {
       fetchBalance();
     } else {
       setBalance(null);
     }
-  }, [connectedAccount, isAgeVerified]);
+  }, [connectedAccount, isAgeVerified, grpcClient]);
 
-  // Place bet
-  const placeBet = () => {
+  // Send CCD transaction to house account
+  const sendTransaction = async (amount: number): Promise<string> => {
+    if (!provider || !connectedAccount || !grpcClient) {
+      throw new Error("Wallet not connected");
+    }
+
+    try {
+      // Get account nonce
+      const accountAddress = AccountAddress.fromBase58(connectedAccount);
+      const nextNonce = await grpcClient.getNextAccountNonce(accountAddress);
+      
+      // Prepare transaction header
+      const header: AccountTransactionHeader = {
+        expiry: TransactionExpiry.futureMinutes(60),
+        nonce: nextNonce.nonce,
+        sender: accountAddress,
+      };
+
+      // Prepare transfer payload
+      const payload: SimpleTransferPayload = {
+        amount: CcdAmount.fromMicroCcd(amount * 1_000_000), // Convert CCD to microCCD
+        toAddress: AccountAddress.fromBase58(HOUSE_ACCOUNT),
+      };
+
+      // Create transaction
+      const transaction = {
+        header,
+        payload,
+        type: AccountTransactionType.Transfer,
+      };
+
+      console.log("Sending transaction:", transaction);
+
+      // Request wallet to sign and send the transaction
+      const txHash = await provider.signAndSendTransaction(
+        accountAddress,
+        transaction.type,
+        payload,
+        header
+      );
+
+      console.log("Transaction sent! Hash:", txHash);
+      return txHash;
+    } catch (error) {
+      console.error("Transaction failed:", error);
+      throw error;
+    }
+  };
+
+  // Place bet with actual CCD transaction
+  const placeBet = async () => {
     if (!selectedHorse || !betAmount || parseFloat(betAmount) <= 0) {
       alert("Please select a horse and enter a valid bet amount!");
       return;
     }
 
     const amount = parseFloat(betAmount);
-    if (balance === null || amount > balance) {
-      alert("Insufficient balance!");
-      return;
-    }
+//     if (balance === null || amount > balance) {
+//       alert("Insufficient balance!");
+//       return;
+//     }
 
-    setCurrentBet({ horseId: selectedHorse, amount });
-    // Note: In a real implementation, the balance would be deducted via smart contract
-    // For now, we'll just track the bet locally
-    alert(`Bet placed: ${amount} CCD on ${horses.find(h => h.id === selectedHorse)?.name}!`);
+    setIsSendingTransaction(true);
+    
+    try {
+      // Send CCD transaction to house account
+      const txHash = await sendTransaction(amount);
+      setTransactionHash(txHash);
+      
+      // Set current bet after successful transaction
+      setCurrentBet({ horseId: selectedHorse, amount });
+      
+      alert(
+        `✅ Bet placed successfully!\n\n` +
+        `Amount: ${amount} CCD\n` +
+        `Horse: ${horses.find(h => h.id === selectedHorse)?.name}\n` +
+        `Transaction: ${txHash.substring(0, 8)}...${txHash.substring(txHash.length - 6)}`
+      );
+      
+      // Refresh balance after transaction
+      setTimeout(() => fetchBalance(), 2000);
+      
+    } catch (error: any) {
+      console.error("Failed to place bet:", error);
+      alert(
+        `❌ Failed to place bet!\n\n` +
+        `Error: ${error.message || "Transaction was rejected or failed"}\n\n` +
+        `Please try again.`
+      );
+    } finally {
+      setIsSendingTransaction(false);
+    }
   };
 
   // Start race
@@ -398,10 +485,10 @@ export const HorseRacing: React.FC = () => {
               <button
                 className="place-bet-button"
                 onClick={placeBet}
-                disabled={!selectedHorse || isRacing}
+                disabled={!selectedHorse || isRacing || isSendingTransaction}
               >
                 <Coins size={20} />
-                Place Bet
+                {isSendingTransaction ? "Sending Transaction..." : "Place Bet"}
               </button>
             ) : (
               <>
@@ -428,6 +515,29 @@ export const HorseRacing: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Transaction Status */}
+      {transactionHash && currentBet && (
+        <div className="transaction-status">
+          <h3>Current Bet Transaction</h3>
+          <p>
+            <strong>Transaction Hash:</strong>{" "}
+            <a
+              href={`https://testnet.ccdscan.io/transactions/${transactionHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {transactionHash.substring(0, 10)}...{transactionHash.substring(transactionHash.length - 8)}
+            </a>
+          </p>
+          <p>
+            <strong>Amount:</strong> {currentBet.amount} CCD
+          </p>
+          <p>
+            <strong>Horse:</strong> {horses.find(h => h.id === currentBet.horseId)?.name}
+          </p>
+        </div>
+      )}
 
       {/* Race History */}
       {raceHistory.length > 0 && (
