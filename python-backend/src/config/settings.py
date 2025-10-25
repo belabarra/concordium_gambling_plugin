@@ -1,4 +1,4 @@
-DATABASE_URL = "sqlite:///gambling_prevention.db"
+DATABASE_URL = "sqlite:///responsible_gambling.db"
 API_KEY = "your_api_key_here"
 DEBUG = True
 SECRET_KEY = "your_secret_key_here"

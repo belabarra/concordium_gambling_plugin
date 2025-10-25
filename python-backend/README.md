@@ -1,11 +1,11 @@
-# Gambling Prevention Tool
+# Responsible Gambling Tool and Services
 
-This project is a backend service for a gambling prevention tool designed to help users manage their gambling activities. It includes features for user data storage, transaction tracking, limit enforcement, and self-exclusion management. The service also integrates with an existing Node.js service for blockchain verification.
+This project is a backend service for a responsible gambling tool designed to help users manage their gambling activities. It includes features for user data storage, transaction tracking, limit enforcement, and self-exclusion management. The service also integrates with an existing Node.js service for blockchain verification.
 
 ## Project Structure
 
 ```
-gambling-prevention-backend
+python-backend
 ├── src
 │   ├── main.py                  # Entry point of the application
 │   ├── config                   # Configuration settings
@@ -35,7 +35,7 @@ gambling-prevention-backend
 1. Clone the repository:
    ```
    git clone <repository-url>
-   cd gambling-prevention-backend
+   cd concordium_gambling_plugin/python-backend
    ```
 
 2. Create a virtual environment:
