@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Dict
 from sqlalchemy.orm import Session
 from models.self_exclusion import SelfExclusion
@@ -9,13 +9,13 @@ class SelfExclusionService:
 
     async def add_self_exclusion(self, user_id: str, duration_days: int, reason: str = None) -> Dict:
         """Add self-exclusion period for a user"""
-        start_date = datetime.utcnow()
+        start_date = datetime.now(timezone.utc)
         end_date = start_date + timedelta(days=duration_days)
         
         # Check if user already has active exclusion
         existing = self.db.query(SelfExclusion).filter(
             SelfExclusion.user_id == user_id,
-            SelfExclusion.end_date > datetime.utcnow()
+            SelfExclusion.end_date > datetime.now(timezone.utc)
         ).first()
         
         if existing:
@@ -45,7 +45,7 @@ class SelfExclusionService:
 
     async def is_user_excluded(self, user_id: str) -> bool:
         """Check if user is currently self-excluded"""
-        current_date = datetime.utcnow()
+        current_date = datetime.now(timezone.utc)
         exclusion = self.db.query(SelfExclusion).filter(
             SelfExclusion.user_id == user_id,
             SelfExclusion.start_date <= current_date,
@@ -58,7 +58,7 @@ class SelfExclusionService:
         """Remove self-exclusion for a user (admin override)"""
         result = self.db.query(SelfExclusion).filter(
             SelfExclusion.user_id == user_id,
-            SelfExclusion.end_date > datetime.utcnow()
+            SelfExclusion.end_date > datetime.now(timezone.utc)
         ).delete()
         self.db.commit()
         
@@ -71,7 +71,7 @@ class SelfExclusionService:
         """Get details of user's self-exclusion"""
         exclusion = self.db.query(SelfExclusion).filter(
             SelfExclusion.user_id == user_id,
-            SelfExclusion.end_date > datetime.utcnow()
+            SelfExclusion.end_date > datetime.now(timezone.utc)
         ).first()
         
         if not exclusion:
@@ -82,7 +82,7 @@ class SelfExclusionService:
             'start_date': exclusion.start_date.isoformat(),
             'end_date': exclusion.end_date.isoformat(),
             'reason': exclusion.reason,
-            'days_remaining': (exclusion.end_date - datetime.utcnow()).days
+            'days_remaining': (exclusion.end_date - datetime.now(timezone.utc)).days
         }
 
     async def get_all_exclusions(self, active_only: bool = True) -> List[Dict]:
@@ -90,7 +90,7 @@ class SelfExclusionService:
         query = self.db.query(SelfExclusion)
         
         if active_only:
-            query = query.filter(SelfExclusion.end_date > datetime.utcnow())
+            query = query.filter(SelfExclusion.end_date > datetime.now(timezone.utc))
         
         exclusions = query.all()
         

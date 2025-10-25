@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
+import uvicorn
 
 from src.api.routes import api_router
 from src.api.middleware import LoggingMiddleware, ErrorHandlingMiddleware
@@ -74,7 +75,6 @@ def read_root():
     }
 
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run(
         "src.main:app",
         host=settings.HOST,

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from models.risk_assessment import RiskAssessment, RiskLevel
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 class RiskAssessmentRepository:
     """Repository for risk assessment data access"""
@@ -70,10 +70,8 @@ class RiskAssessmentRepository:
 
     def get_assessment_trends(self, user_id: str, days: int = 90) -> List[RiskAssessment]:
         """Get assessment trends over time"""
-        start_date = datetime.utcnow() - timedelta(days=days)
+        start_date = datetime.now(timezone.utc) - timedelta(days=days)
         return self.db.query(RiskAssessment).filter(
             RiskAssessment.user_id == user_id,
             RiskAssessment.assessed_at >= start_date
         ).order_by(RiskAssessment.assessed_at.asc()).all()
-
-from datetime import timedelta

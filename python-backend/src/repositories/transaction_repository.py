@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timezone
 
 Base = declarative_base()
 
@@ -11,7 +11,7 @@ class Transaction(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, index=True)
     amount = Column(Float)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 class TransactionRepository:
     def __init__(self, session: Session):

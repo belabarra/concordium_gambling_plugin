@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from models.operator import Operator
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 class OperatorRepository:
     """Repository for operator data access"""
@@ -43,7 +43,7 @@ class OperatorRepository:
         """Update operator's last active timestamp"""
         operator = self.get_operator(operator_id)
         if operator:
-            operator.last_active = datetime.utcnow()
+            operator.last_active = datetime.now(timezone.utc)
             self.db.commit()
             return True
         return False

@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Boolean, DateTime, JSON
 from sqlalchemy.ext.declarative import declarative_base
-from datetime import datetime
+from datetime import datetime, timezone
 
 Base = declarative_base()
 
@@ -13,7 +13,7 @@ class Operator(Base):
     platform_url = Column(String, nullable=True)
     api_key = Column(String, nullable=False, unique=True)
     is_active = Column(Boolean, default=True)
-    registered_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    registered_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     last_active = Column(DateTime, nullable=True)
     supported_currencies = Column(JSON, default=['CCD'])  # List of supported PLT currencies
     compliance_level = Column(String, default='standard')  # standard, enhanced, premium

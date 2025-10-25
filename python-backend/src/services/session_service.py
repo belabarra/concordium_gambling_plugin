@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict
 import uuid
 from sqlalchemy.orm import Session
@@ -32,7 +32,7 @@ class SessionService:
         # Check if user is in mandatory break period
         last_session = self.session_repository.get_last_session(user_id)
         if last_session and last_session.end_time:
-            time_since_last = datetime.utcnow() - last_session.end_time
+            time_since_last = datetime.now(timezone.utc) - last_session.end_time
             if time_since_last.total_seconds() / 60 < self.mandatory_break_duration:
                 remaining = self.mandatory_break_duration - (time_since_last.total_seconds() / 60)
                 return {
@@ -40,18 +40,18 @@ class SessionService:
                     'message': f'Mandatory break period. Please wait {remaining:.0f} more minutes',
                     'remaining_minutes': remaining
                 }
-        
+                
         # Create new session
         session_id = str(uuid.uuid4())
         new_session = GamingSession(
             session_id=session_id,
             user_id=user_id,
             platform_id=platform_id,
-            start_time=datetime.utcnow(),
-            currency=currency,
+            start_time=datetime.now(timezone.utc),
             status='active'
         )
         
+        created_session = self.session_repository.create_session(new_session)
         created_session = self.session_repository.create_session(new_session)
         
         return {
@@ -69,7 +69,7 @@ class SessionService:
         if session.status == 'ended':
             return {'success': False, 'message': 'Session already ended'}
         
-        session.end_time = datetime.utcnow()
+        session.end_time = datetime.now(timezone.utc)
         session.status = 'ended'
         
         updated_session = self.session_repository.update_session(session)

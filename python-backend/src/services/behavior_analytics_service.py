@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Optional
 from sqlalchemy.orm import Session
 from repositories.transaction_repository import TransactionRepository
@@ -16,10 +16,13 @@ class BehaviorAnalyticsService:
         self.session_repository = SessionRepository(db)
         self.risk_repository = RiskAssessmentRepository(db)
 
-    async def analyze_spending_pattern(self, user_id: str, days: int = 30) -> Dict:
-        """Detect unusual spending patterns (chasing losses, escalation)"""
-        start_date = datetime.utcnow() - timedelta(days=days)
-        transactions = self.transaction_repository.get_user_transactions_since(user_id, start_date)
+    async def analyze_user_behavior(self, user_id: str, days: int = 30) -> Dict:
+        """Analyze user gambling behavior patterns"""
+        # Get user's transactions and sessions
+        start_date = datetime.now(timezone.utc) - timedelta(days=days)
+        transactions = self.transaction_repository.find_by_user_id_and_date_range(
+            user_id, start_date, datetime.now(timezone.utc)
+        )
         
         if not transactions:
             return {
@@ -58,15 +61,10 @@ class BehaviorAnalyticsService:
         
         return {
             'success': True,
-            'pattern': pattern_type,
-            'metrics': {
-                'total_spent': total_spent,
-                'avg_transaction': avg_transaction,
-                'transaction_count': len(transactions),
-                'escalation_rate': escalation_rate,
-                'chasing_incidents': chasing_incidents
-            },
-            'risk_indicators': risk_indicators
+            'patterns': pattern_type,
+            'risk_indicators': risk_indicators,
+            'generated_at': datetime.now(timezone.utc).isoformat(),
+            'user_id': user_id
         }
 
     async def calculate_risk_score(self, user_id: str) -> Dict:
@@ -92,7 +90,7 @@ class BehaviorAnalyticsService:
         
         # Factor 3: Session frequency (0-20 points)
         sessions = self.session_repository.get_user_sessions(user_id, limit=100)
-        recent_sessions = [s for s in sessions if (datetime.utcnow() - s.start_time).days <= 7]
+        recent_sessions = [s for s in sessions if (datetime.now(timezone.utc) - s.start_time).days <= 7]
         if len(recent_sessions) > 20:
             factors['high_frequency'] = 20
         elif len(recent_sessions) > 10:
@@ -118,7 +116,7 @@ class BehaviorAnalyticsService:
             risk_score=total_score,
             risk_level=risk_level,
             factors=factors,
-            assessed_at=datetime.utcnow(),
+            assessed_at=datetime.now(timezone.utc),
             recommendations=recommendations
         )
         
@@ -132,40 +130,10 @@ class BehaviorAnalyticsService:
             'recommendations': recommendations
         }
 
-    async def detect_time_anomalies(self, user_id: str) -> Dict:
-        """Detect unhealthy time patterns (late night, excessive hours)"""
-        sessions = self.session_repository.get_user_sessions(user_id, limit=50)
-        
-        if not sessions:
-            return {
-                'success': True,
-                'excessive_time': False,
-                'late_night_pattern': False,
-                'message': 'Insufficient session data'
-            }
-        
-        # Calculate total time spent in last 7 days
-        week_ago = datetime.utcnow() - timedelta(days=7)
-        recent_sessions = [s for s in sessions if s.start_time >= week_ago]
-        
-        total_minutes = sum(s.duration_minutes() for s in recent_sessions if s.duration_minutes())
-        avg_session_minutes = total_minutes / len(recent_sessions) if recent_sessions else 0
-        
-        # Detect late night gambling (10 PM - 4 AM)
-        late_night_sessions = sum(1 for s in recent_sessions if s.start_time.hour >= 22 or s.start_time.hour <= 4)
-        late_night_percentage = (late_night_sessions / len(recent_sessions) * 100) if recent_sessions else 0
-        
-        return {
-            'success': True,
-            'excessive_time': total_minutes > 1200,  # More than 20 hours/week
-            'late_night_pattern': late_night_percentage > 40,
-            'metrics': {
-                'total_minutes_week': total_minutes,
-                'avg_session_minutes': avg_session_minutes,
-                'late_night_percentage': late_night_percentage,
-                'session_count': len(recent_sessions)
-            }
-        }
+    async def detect_patterns(self, user_id: str) -> Dict:
+        """Detect problematic gambling patterns"""
+        week_ago = datetime.now(timezone.utc) - timedelta(days=7)
+        sessions = self.session_repository.get_user_sessions_since(user_id, week_ago)
 
     async def generate_wellness_report(self, user_id: str) -> Dict:
         """Generate personalized wellness report for user"""
@@ -180,7 +148,7 @@ class BehaviorAnalyticsService:
         
         # Generate summary
         summary = {
-            'generated_at': datetime.utcnow().isoformat(),
+            'generated_at': datetime.now(timezone.utc).isoformat(),
             'risk_assessment': {
                 'score': risk_result['risk_score'],
                 'level': risk_result['risk_level'],

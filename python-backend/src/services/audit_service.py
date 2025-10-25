@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List
 from sqlalchemy.orm import Session
 from repositories.audit_log_repository import AuditLogRepository
@@ -30,7 +30,7 @@ class AuditService:
         
         audit_log = AuditLog(
             log_id=log_id,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             action_type=action_type,
             user_id=user_id,
             operator_id=operator_id,
@@ -60,7 +60,7 @@ class AuditService:
         """Generate reports for regulatory authorities"""
         if not start_date or not end_date:
             # Default to last month
-            end_date = datetime.utcnow()
+            end_date = datetime.now(timezone.utc)
             if period == 'month':
                 start_date = end_date.replace(day=1)
             elif period == 'quarter':
@@ -92,8 +92,8 @@ class AuditService:
             'total_actions': total_actions,
             'action_breakdown': action_breakdown,
             'failed_actions_count': len(failed_actions),
-            'failed_actions': failed_actions[:100],  # Limit to first 100
-            'generated_at': datetime.utcnow().isoformat()
+            'failed_actions': failed_actions[:100],
+            'generated_at': datetime.now(timezone.utc).isoformat()
         }
         
         return {
@@ -145,7 +145,7 @@ class AuditService:
             'access_requests': len(access_logs),
             'deletion_requests': len(deletion_logs),
             'compliant': len(consent_logs) > 0,
-            'checked_at': datetime.utcnow().isoformat()
+            'checked_at': datetime.now(timezone.utc).isoformat()
         }
         
         return {
