@@ -68,4 +68,3 @@ class UserRepository:
     def get_all_users(self) -> List[User]:
         """Get all users"""
         return self.db.query(User).all()
-    
