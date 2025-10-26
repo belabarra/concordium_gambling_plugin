@@ -1,0 +1,1 @@
+/Users/isabelabarra/Desktop/Projects💫/concordium_gambling_plugin/contracts/target/concordium/wasm32-unknown-unknown/release/libpayout_contract.rlib: /Users/isabelabarra/Desktop/Projects💫/concordium_gambling_plugin/contracts/src/lib.rs

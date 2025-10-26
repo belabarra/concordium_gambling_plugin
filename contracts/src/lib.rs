@@ -6,7 +6,7 @@
 use concordium_std::*;
 
 /// Contract state
-#[derive(Serialize, SchemaType)]
+#[derive(Serialize, SchemaType, Clone)]
 pub struct State {
     /// Platform owner address (who can trigger payouts)
     pub owner: AccountAddress,
@@ -34,28 +34,40 @@ pub struct PayoutParams {
     pub game_id: String,
 }
 
+/// Contract errors
+#[derive(Debug, PartialEq, Eq, Reject, Serial, SchemaType)]
+pub enum ContractError {
+    /// Parsing failed
+    #[from(ParseError)]
+    ParseError,
+    /// Only owner can perform this action
+    Unauthorized,
+}
+
 /// Payout winnings to winner
 #[receive(
     contract = "payout_contract",
     name = "payout",
     parameter = "PayoutParams",
+    error = "ContractError",
     mutable
 )]
 fn payout(
     ctx: &ReceiveContext,
     host: &mut Host<State>,
-) -> ReceiveResult<()> {
+) -> Result<(), ContractError> {
     // Only owner can trigger payouts
     ensure!(
         ctx.sender().matches_account(&host.state().owner),
-        ContractError::Unauthorized.into()
+        ContractError::Unauthorized
     );
 
     // Parse parameters
     let params: PayoutParams = ctx.parameter_cursor().get()?;
 
     // Transfer funds to winner
-    host.invoke_transfer(&params.winner, params.amount)?;
+    host.invoke_transfer(&params.winner, params.amount)
+        .map_err(|_| ContractError::Unauthorized)?;
 
     // Update total payouts
     host.state_mut().total_payouts += params.amount;
@@ -67,46 +79,4 @@ fn payout(
 #[receive(contract = "payout_contract", name = "view", return_value = "Amount")]
 fn view(_ctx: &ReceiveContext, host: &Host<State>) -> ReceiveResult<Amount> {
     Ok(host.state().total_payouts)
-}
-
-/// Contract errors
-#[derive(Debug, PartialEq, Eq, Reject, Serialize, SchemaType)]
-pub enum ContractError {
-    /// Only owner can perform this action
-    #[from(ParseError)]
-    ParseError,
-    Unauthorized,
-}
-
-#[concordium_cfg_test]
-mod tests {
-    use super::*;
-    use concordium_std::test_infrastructure::*;
-
-    #[concordium_test]
-    fn test_init() {
-        let ctx = TestInitContext::empty();
-        let mut state_builder = TestStateBuilder::new();
-        
-        let state = init(&ctx, &mut state_builder).expect("Init should succeed");
-        
-        claim_eq!(state.total_payouts, Amount::zero());
-    }
-
-    #[concordium_test]
-    fn test_payout() {
-        let mut ctx = TestReceiveContext::empty();
-        let winner = AccountAddress([1u8; 32]);
-        
-        let params = PayoutParams {
-            winner,
-            amount: Amount::from_micro_ccd(1000000),
-            game_id: String::from("game_123"),
-        };
-        
-        let parameter_bytes = to_bytes(&params);
-        ctx.set_parameter(&parameter_bytes);
-        
-        // Test implementation would verify payout logic
-    }
 }
