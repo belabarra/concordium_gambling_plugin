@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 from sqlalchemy.orm import Session
-from repositories.transaction_repository import TransactionRepository
-from repositories.session_repository import SessionRepository
-from repositories.risk_assessment_repository import RiskAssessmentRepository
-from models.risk_assessment import RiskAssessment, RiskLevel
+from src.repositories.transaction_repository import TransactionRepository
+from src.repositories.session_repository import SessionRepository
+from src.repositories.risk_assessment_repository import RiskAssessmentRepository
+from src.models.risk_assessment import RiskAssessment, RiskLevel
 import uuid
 
 class BehaviorAnalyticsService:

@@ -39,7 +39,7 @@ class Notification(Base):
     sent_at = Column(DateTime, nullable=True)
     read_at = Column(DateTime, nullable=True)
     status = Column(SQLEnum(NotificationStatus), nullable=False, default=NotificationStatus.PENDING)
-    metadata = Column(JSON, nullable=True)
+    notification_data = Column(JSON, nullable=True)  # Renamed from 'metadata' to avoid SQLAlchemy conflict
     priority = Column(String, default='normal')  # low, normal, high, critical
 
     def __repr__(self):
@@ -56,7 +56,7 @@ class Notification(Base):
             'sent_at': self.sent_at.isoformat() if self.sent_at else None,
             'read_at': self.read_at.isoformat() if self.read_at else None,
             'status': self.status.value if isinstance(self.status, Enum) else self.status,
-            'metadata': self.metadata,
+            'notification_data': self.notification_data,
             'priority': self.priority
         }
 

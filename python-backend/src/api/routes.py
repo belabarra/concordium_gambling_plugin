@@ -5,25 +5,25 @@ from typing import Optional, List
 from datetime import datetime
 
 # Import database dependency
-from config.database import get_db
+from src.config.database import get_db
 
 # Import services
-from services.user_service import UserService
-from services.transaction_service import TransactionService
-from services.limit_enforcement_service import LimitEnforcementService
-from services.self_exclusion_service import SelfExclusionService
-from services.session_service import SessionService
-from services.notification_service import NotificationService
-from services.behavior_analytics_service import BehaviorAnalyticsService
-from services.audit_service import AuditService
-from services.blockchain_integration_service import BlockchainIntegrationService
+from src.services.user_service import UserService
+from src.services.transaction_service import TransactionService
+from src.services.limit_enforcement_service import LimitEnforcementService
+from src.services.self_exclusion_service import SelfExclusionService
+from src.services.session_service import SessionService
+from src.services.notification_service import NotificationService
+from src.services.behavior_analytics_service import BehaviorAnalyticsService
+from src.services.audit_service import AuditService
+from src.services.blockchain_integration_service import BlockchainIntegrationService
 
 # Create router
 api_router = APIRouter(prefix="/api/v1", tags=["api"])
 
 # Dependency for API key authentication
 async def verify_api_key(x_api_key: Optional[str] = Header(None)):
-    from config.settings import settings
+    from src.config.settings import settings
     if x_api_key and x_api_key != settings.API_KEY:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
-from models.risk_assessment import RiskAssessment, RiskLevel
+from src.models.risk_assessment import RiskAssessment, RiskLevel
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class RiskAssessmentRepository:
     """Repository for risk assessment data access"""
@@ -75,5 +75,3 @@ class RiskAssessmentRepository:
             RiskAssessment.user_id == user_id,
             RiskAssessment.assessed_at >= start_date
         ).order_by(RiskAssessment.assessed_at.asc()).all()
-
-from datetime import timedelta

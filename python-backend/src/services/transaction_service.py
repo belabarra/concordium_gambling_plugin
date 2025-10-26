@@ -2,11 +2,11 @@ from datetime import datetime
 from typing import List, Optional, Dict
 import uuid
 from sqlalchemy.orm import Session
-from models.transaction import Transaction
-from repositories.transaction_repository import TransactionRepository
-from services.blockchain_integration_service import BlockchainIntegrationService
-from services.limit_enforcement_service import LimitEnforcementService
-from services.audit_service import AuditService
+from src.models.transaction import Transaction
+from src.repositories.transaction_repository import TransactionRepository
+from src.services.blockchain_integration_service import BlockchainIntegrationService
+from src.services.limit_enforcement_service import LimitEnforcementService
+from src.services.audit_service import AuditService
 
 class TransactionService:
     def __init__(self, db: Session):

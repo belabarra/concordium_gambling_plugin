@@ -2,8 +2,8 @@ from datetime import datetime, timedelta
 from typing import Dict, List
 import uuid
 from sqlalchemy.orm import Session
-from models.notification import Notification, NotificationType, NotificationStatus
-from repositories.notification_repository import NotificationRepository
+from src.models.notification import Notification, NotificationType, NotificationStatus
+from src.repositories.notification_repository import NotificationRepository
 
 class NotificationService:
     """Sends notifications to users and operators"""
@@ -33,7 +33,7 @@ class NotificationService:
             message=message,
             created_at=datetime.utcnow(),
             status=NotificationStatus.PENDING,
-            metadata=data,
+            notification_data=data,
             priority=priority
         )
         
@@ -70,7 +70,7 @@ class NotificationService:
             message=f"User {user_id} requires attention: {alert_type}",
             created_at=datetime.utcnow(),
             status=NotificationStatus.PENDING,
-            metadata={'operator_id': operator_id, 'user_id': user_id, 'alert_type': alert_type, **data},
+            notification_data={'operator_id': operator_id, 'user_id': user_id, 'alert_type': alert_type, **data},
             priority='high'
         )
         
@@ -101,7 +101,7 @@ class NotificationService:
             message=data.get('message', 'You have a scheduled reminder'),
             created_at=datetime.utcnow(),
             status=NotificationStatus.PENDING,
-            metadata={'scheduled_for': when.isoformat(), 'reminder_type': reminder_type, **(data or {})},
+            notification_data={'scheduled_for': when.isoformat(), 'reminder_type': reminder_type, **(data or {})},
             priority='normal'
         )
         

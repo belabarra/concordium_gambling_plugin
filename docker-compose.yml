@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:14-alpine
+    container_name: concordium_db
+    environment:
+      POSTGRES_USER: gambling_user
+      POSTGRES_PASSWORD: gambling_password
+      POSTGRES_DB: responsible_gambling
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - concordium_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gambling_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Python Backend (FastAPI)
+  python-backend:
+    build: ./python-backend
+    container_name: concordium_python_backend
+    environment:
+      DATABASE_URL: postgresql://gambling_user:gambling_password@postgres:5432/responsible_gambling
+      NODE_BACKEND_URL: http://node-backend:3001
+      DEBUG: "true"
+      HOST: 0.0.0.0
+      PORT: 8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./python-backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - concordium_network
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Node.js Backend (Concordium Integration)
+  node-backend:
+    build: ./node-backend
+    container_name: concordium_node_backend
+    environment:
+      PORT: 3001
+      NODE_ENV: development
+      CONCORDIUM_NODE_URL: https://grpc.testnet.concordium.com:20000
+      CONCORDIUM_NETWORK: testnet
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./node-backend:/app
+      - /app/node_modules
+    networks:
+      - concordium_network
+    command: npm run dev
+
+  # Frontend (React)
+  frontend:
+    build: ./Frontend
+    container_name: concordium_frontend
+    environment:
+      REACT_APP_API_BASE_URL: http://localhost:8000/api/v1
+      REACT_APP_NODE_BACKEND_URL: http://localhost:3001
+      REACT_APP_OPERATOR_ID: platform_main
+      REACT_APP_CONCORDIUM_NETWORK: testnet
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./Frontend:/app
+      - /app/node_modules
+    depends_on:
+      - python-backend
+      - node-backend
+    networks:
+      - concordium_network
+    command: npm start
+
+networks:
+  concordium_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
