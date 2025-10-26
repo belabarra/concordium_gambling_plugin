@@ -3,11 +3,11 @@ from typing import Dict, List, Optional
 import uuid
 from datetime import datetime, timezone
 
-from models.payment import Payment, PaymentType, PaymentStatus
-from repositories.payment_repository import PaymentRepository
-from services.wallet_service import WalletService
-from services.blockchain_integration_service import BlockchainIntegrationService
-from services.smart_contract_service import SmartContractService
+from src.models.payment import Payment, PaymentType, PaymentStatus
+from src.repositories.payment_repository import PaymentRepository
+from src.services.wallet_service import WalletService
+from src.services.blockchain_integration_service import BlockchainIntegrationService
+from src.services.smart_contract_service import SmartContractService
 
 class PaymentService:
     """Service for payment operations"""

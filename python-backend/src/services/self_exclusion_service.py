@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Dict
 from sqlalchemy.orm import Session
-from models.self_exclusion import SelfExclusion
+from src.models.self_exclusion import SelfExclusion
 
 class SelfExclusionService:
     def __init__(self, db: Session):

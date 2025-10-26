@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models.session import Session as GamingSession
+from src.models.session import Session as GamingSession
 from typing import List, Optional
 from datetime import datetime
 

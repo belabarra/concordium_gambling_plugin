@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models.operator import Operator
+from src.models.operator import Operator
 from typing import List, Optional
 from datetime import datetime, timezone
 

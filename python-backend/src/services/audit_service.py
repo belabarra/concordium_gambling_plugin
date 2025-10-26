@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
 from typing import Dict, List
 from sqlalchemy.orm import Session
-from repositories.audit_log_repository import AuditLogRepository
-from models.audit_log import AuditLog
+from src.repositories.audit_log_repository import AuditLogRepository
+from src.models.audit_log import AuditLog
 import uuid
 
 class AuditService:

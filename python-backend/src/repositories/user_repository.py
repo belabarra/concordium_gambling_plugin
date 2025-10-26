@@ -1,8 +1,9 @@
 from sqlalchemy import Column, Integer, String, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session
-from models.user import User
+from src.models.user import User
 from typing import Optional, List
+from datetime import datetime
 
 
 
@@ -28,6 +29,10 @@ class UserRepository:
         return self.db.query(User).filter(
         User.wallet_address == wallet_address
         ).first()
+
+    def get_user(self, user_id: str) -> Optional[User]:
+        """Get user by ID"""
+        return self.db.query(User).filter(User.id == user_id).first()
 
     
     def update_user(self, user: User) -> User:

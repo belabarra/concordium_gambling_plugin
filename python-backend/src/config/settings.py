@@ -1,6 +1,7 @@
 import os
 from pydantic_settings import BaseSettings
-from typing import List
+from pydantic import field_validator
+from typing import List, Union
 
 class Settings(BaseSettings):
     """Application settings"""
@@ -42,10 +43,10 @@ class Settings(BaseSettings):
     RISK_HIGH_THRESHOLD: float = 75.0
     
     # Supported Currencies
-    SUPPORTED_CURRENCIES: List[str] = ["CCD", "EUR_PLT", "USD_PLT"]
+    SUPPORTED_CURRENCIES: Union[str, List[str]] = "CCD,EUR_PLT,USD_PLT"
     
     # CORS
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8080"]
+    CORS_ORIGINS: Union[str, List[str]] = "http://localhost:3000,http://localhost:8080"
     
     # Notification Settings
     NOTIFICATION_EMAIL_ENABLED: bool = False
@@ -54,6 +55,22 @@ class Settings(BaseSettings):
     
     # Logging
     LOG_LEVEL: str = "INFO"
+    
+    @field_validator('SUPPORTED_CURRENCIES', mode='before')
+    @classmethod
+    def parse_supported_currencies(cls, v: Union[str, List[str]]) -> List[str]:
+        """Parse comma-separated string or list"""
+        if isinstance(v, str):
+            return [currency.strip() for currency in v.split(',') if currency.strip()]
+        return v
+    
+    @field_validator('CORS_ORIGINS', mode='before')
+    @classmethod
+    def parse_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        """Parse comma-separated string or list"""
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(',') if origin.strip()]
+        return v
     
     class Config:
         env_file = ".env"

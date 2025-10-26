@@ -3,8 +3,8 @@ from typing import Dict
 import uuid
 from datetime import datetime, timezone
 
-from models.wallet import Wallet
-from services.blockchain_integration_service import BlockchainIntegrationService
+from src.models.wallet import Wallet
+from src.services.blockchain_integration_service import BlockchainIntegrationService
 
 class WalletService:
     """Service for wallet operations"""

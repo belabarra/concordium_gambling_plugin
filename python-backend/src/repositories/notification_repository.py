@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models.notification import Notification, NotificationStatus
+from src.models.notification import Notification, NotificationStatus
 from typing import List, Optional
 from datetime import datetime, timezone
 

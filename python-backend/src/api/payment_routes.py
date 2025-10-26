@@ -3,10 +3,10 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from pydantic import BaseModel
 
-from config.database import get_db
-from services.wallet_service import WalletService
-from services.payment_service import PaymentService
-from models.payment import PaymentType
+from src.config.database import get_db
+from src.services.wallet_service import WalletService
+from src.services.payment_service import PaymentService
+from src.models.payment import PaymentType
 
 router = APIRouter(prefix="/api/v1", tags=["Payments"])
 

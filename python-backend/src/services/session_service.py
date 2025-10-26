@@ -2,10 +2,10 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict
 import uuid
 from sqlalchemy.orm import Session
-from models.session import Session as GamingSession
-from repositories.session_repository import SessionRepository
-from services.notification_service import NotificationService
-from models.notification import NotificationType
+from src.models.session import Session as GamingSession
+from src.repositories.session_repository import SessionRepository
+from src.services.notification_service import NotificationService
+from src.models.notification import NotificationType
 
 class SessionService:
     """Manages gambling sessions with time tracking and mandatory breaks"""

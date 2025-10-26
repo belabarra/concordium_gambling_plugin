@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime, timedelta, timezone
-from models.payment import Payment, PaymentType, PaymentStatus
+from src.models.payment import Payment, PaymentType, PaymentStatus
 
 class PaymentRepository:
     """Repository for payment data access"""

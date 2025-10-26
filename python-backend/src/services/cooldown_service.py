@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Optional
 from sqlalchemy.orm import Session
-from models.cooldown import Cooldown
+from src.models.cooldown import Cooldown
 
 class CooldownService:
     def __init__(self, db: Session):
