@@ -1,7 +1,0 @@
-/Users/isabelabarra/Desktop/Projects💫/concordium_gambling_plugin/contracts/target/debug/deps/concordium_contracts_common_derive-b68064ad6e1c5203.d: /Users/isabelabarra/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/concordium-contracts-common-derive-4.1.0/src/lib.rs /Users/isabelabarra/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/concordium-contracts-common-derive-4.1.0/src/attribute.rs /Users/isabelabarra/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/concordium-contracts-common-derive-4.1.0/src/derive.rs
-
-/Users/isabelabarra/Desktop/Projects💫/concordium_gambling_plugin/contracts/target/debug/deps/libconcordium_contracts_common_derive-b68064ad6e1c5203.dylib: /Users/isabelabarra/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/concordium-contracts-common-derive-4.1.0/src/lib.rs /Users/isabelabarra/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/concordium-contracts-common-derive-4.1.0/src/attribute.rs /Users/isabelabarra/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/concordium-contracts-common-derive-4.1.0/src/derive.rs
-
-/Users/isabelabarra/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/concordium-contracts-common-derive-4.1.0/src/lib.rs:
-/Users/isabelabarra/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/concordium-contracts-common-derive-4.1.0/src/attribute.rs:
-/Users/isabelabarra/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/concordium-contracts-common-derive-4.1.0/src/derive.rs:
