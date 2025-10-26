@@ -45,7 +45,13 @@ class Settings(BaseSettings):
     SUPPORTED_CURRENCIES: List[str] = ["CCD", "EUR_PLT", "USD_PLT"]
     
     # CORS
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8080"]
+    CORS_ORIGINS: List[str] = [
+        "http://localhost:3000", 
+        "http://localhost:8080",
+        "http://localhost:5173",  # Vite default
+        "http://localhost:5174",  # Vite alternative
+        "http://localhost:4173"   # Vite preview
+    ]
     
     # Notification Settings
     NOTIFICATION_EMAIL_ENABLED: bool = False

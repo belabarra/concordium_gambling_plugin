@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useResponsibleGambling } from '../context/ResponsibleGamblingContext';
 import { useWallet } from '../context/WalletContext';
+import { responsibleGamblingAPI } from '../services/api';
 
 export const ResponsibleGamblingTools: React.FC = () => {
   const { 
-    setLimit, 
-    selfExclude, 
-    limits, 
     isExcluded, 
     isLoading 
   } = useResponsibleGambling();
@@ -16,6 +14,25 @@ export const ResponsibleGamblingTools: React.FC = () => {
   const [limitPeriod, setLimitPeriod] = useState<string>('daily');
   const [exclusionDays, setExclusionDays] = useState<number>(30);
   const [message, setMessage] = useState<string>('');
+  const [userLimits, setUserLimits] = useState<any>(null);
+
+  // Fetch user limits from backend
+  useEffect(() => {
+    if (connectedAccount) {
+      fetchUserLimits();
+    }
+  }, [connectedAccount]);
+
+  const fetchUserLimits = async () => {
+    if (!connectedAccount) return;
+    
+    try {
+      const response = await responsibleGamblingAPI.getUserLimits(connectedAccount);
+      setUserLimits(response.data);
+    } catch (error) {
+      console.error("Failed to fetch user limits:", error);
+    }
+  };
 
   const handleSetLimit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,11 +49,18 @@ export const ResponsibleGamblingTools: React.FC = () => {
     }
 
     try {
-      await setLimit('spending', limitAmount, limitPeriod);
+      await responsibleGamblingAPI.setLimit(
+        connectedAccount,
+        'spending',
+        limitAmount,
+        limitPeriod
+      );
       setMessage('Spending limit set successfully!');
       setLimitAmount(0);
+      // Refresh limits
+      await fetchUserLimits();
     } catch (err: any) {
-      setMessage(`Failed to set limit: ${err.message}`);
+      setMessage(`Failed to set limit: ${err.response?.data?.detail || err.message}`);
     }
   };
 
@@ -53,10 +77,16 @@ export const ResponsibleGamblingTools: React.FC = () => {
     if (!confirmed) return;
     
     try {
-      await selfExclude(exclusionDays, ['platform_main']);
+      await responsibleGamblingAPI.selfExclude(
+        connectedAccount,
+        exclusionDays,
+        [import.meta.env.VITE_OPERATOR_ID || 'platform_main']
+      );
       setMessage('Self-exclusion activated successfully');
+      // Refresh page to apply exclusion
+      setTimeout(() => window.location.reload(), 2000);
     } catch (err: any) {
-      setMessage(`Failed to activate self-exclusion: ${err.message}`);
+      setMessage(`Failed to activate self-exclusion: ${err.response?.data?.detail || err.message}`);
     }
   };
 
@@ -87,16 +117,23 @@ export const ResponsibleGamblingTools: React.FC = () => {
         <h3>Set Spending Limits</h3>
         <p>Control your gambling by setting spending limits</p>
         
-        {limits && (
+        {userLimits && userLimits.length > 0 && (
           <div className="current-limits">
             <p>Current Limits:</p>
             <ul>
-              {Object.entries(limits).map(([key, value]: [string, any]) => (
-                <li key={key}>
-                  {key}: {value.amount} CCD ({value.period})
+              {userLimits.map((limit: any, index: number) => (
+                <li key={index}>
+                  {limit.limit_type}: {limit.amount} {limit.currency} ({limit.period})
+                  {limit.is_active && <span> ✓ Active</span>}
                 </li>
               ))}
             </ul>
+          </div>
+        )}
+        
+        {(!userLimits || userLimits.length === 0) && (
+          <div className="current-limits">
+            <p>No spending limits set yet.</p>
           </div>
         )}
         

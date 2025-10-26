@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useWallet } from "../context/WalletContext";
 import { Trophy, Coins, Play, RotateCcw, RefreshCw } from "lucide-react";
 import { ConcordiumGRPCWebClient, AccountAddress } from "@concordium/web-sdk";
+import { paymentAPI, responsibleGamblingAPI, userAPI } from "../services/api";
 import "./HorseRacing.css";
 
 interface Horse {
@@ -39,9 +40,79 @@ export const HorseRacing: React.FC = () => {
   const [isLoadingBalance, setIsLoadingBalance] = useState<boolean>(false);
   const [currentBet, setCurrentBet] = useState<Bet | null>(null);
   const [raceHistory, setRaceHistory] = useState<string[]>([]);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isRegistered, setIsRegistered] = useState<boolean>(false);
   
   const raceIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const finishLine = 100;
+
+  // Register user in backend if not already registered
+  const registerUser = async () => {
+    if (!connectedAccount) return;
+    
+    try {
+      await userAPI.register(connectedAccount);
+      setIsRegistered(true);
+      console.log("User registered successfully");
+    } catch (error: any) {
+      // If error is 409 (already exists), that's fine
+      if (error.response?.status === 409 || error.response?.data?.detail?.includes("already exists")) {
+        setIsRegistered(true);
+        console.log("User already registered");
+      } else {
+        console.error("Error registering user:", error);
+      }
+    }
+  };
+
+  // Start gambling session
+  const startSession = async () => {
+    if (!connectedAccount || sessionId) return;
+    
+    try {
+      const response = await responsibleGamblingAPI.startSession(
+        connectedAccount,
+        import.meta.env.VITE_OPERATOR_ID || 'platform_main'
+      );
+      setSessionId(response.data.session_id);
+      console.log("Session started:", response.data.session_id);
+    } catch (error) {
+      console.error("Error starting session:", error);
+    }
+  };
+
+  // End gambling session
+  const endSession = async () => {
+    if (!sessionId) return;
+    
+    try {
+      await responsibleGamblingAPI.endSession(sessionId);
+      console.log("Session ended");
+      setSessionId(null);
+    } catch (error) {
+      console.error("Error ending session:", error);
+    }
+  };
+
+  // Register user and start session when connected
+  useEffect(() => {
+    if (connectedAccount && isAgeVerified && !isRegistered) {
+      registerUser();
+    }
+  }, [connectedAccount, isAgeVerified]);
+
+  useEffect(() => {
+    if (connectedAccount && isAgeVerified && isRegistered && !sessionId) {
+      startSession();
+    }
+    
+    // Cleanup: end session on unmount
+    return () => {
+      if (sessionId) {
+        endSession();
+      }
+    };
+  }, [connectedAccount, isAgeVerified, isRegistered]);
 
   // Fetch account balance from the blockchain
   const fetchBalance = async () => {
@@ -115,7 +186,7 @@ export const HorseRacing: React.FC = () => {
   }, [connectedAccount, isAgeVerified]);
 
   // Place bet
-  const placeBet = () => {
+  const placeBet = async () => {
     if (!selectedHorse || !betAmount || parseFloat(betAmount) <= 0) {
       alert("Please select a horse and enter a valid bet amount!");
       return;
@@ -127,10 +198,37 @@ export const HorseRacing: React.FC = () => {
       return;
     }
 
-    setCurrentBet({ horseId: selectedHorse, amount });
-    // Note: In a real implementation, the balance would be deducted via smart contract
-    // For now, we'll just track the bet locally
-    alert(`Bet placed: ${amount} CCD on ${horses.find(h => h.id === selectedHorse)?.name}!`);
+    try {
+      // Check spending limits before placing bet
+      if (connectedAccount) {
+        try {
+          const limitCheck = await responsibleGamblingAPI.checkLimit(connectedAccount, amount);
+          if (!limitCheck.data.allowed) {
+            alert(`Cannot place bet: ${limitCheck.data.reason || 'Spending limit exceeded'}`);
+            return;
+          }
+        } catch (error) {
+          console.warn("Limit check failed, proceeding with bet:", error);
+        }
+      }
+
+      // Record deposit in Python backend
+      if (connectedAccount) {
+        try {
+          await paymentAPI.deposit(connectedAccount, amount);
+          console.log("Deposit recorded in backend");
+        } catch (error) {
+          console.error("Failed to record deposit:", error);
+          // Continue anyway for demo purposes
+        }
+      }
+
+      setCurrentBet({ horseId: selectedHorse, amount });
+      alert(`Bet placed: ${amount} CCD on ${horses.find(h => h.id === selectedHorse)?.name}!`);
+    } catch (error) {
+      console.error("Error placing bet:", error);
+      alert("Failed to place bet. Please try again.");
+    }
   };
 
   // Start race
@@ -179,7 +277,7 @@ export const HorseRacing: React.FC = () => {
   };
 
   // Handle race end
-  const handleRaceEnd = (winningHorse: Horse) => {
+  const handleRaceEnd = async (winningHorse: Horse) => {
     if (raceIntervalRef.current) {
       clearInterval(raceIntervalRef.current);
     }
@@ -190,11 +288,27 @@ export const HorseRacing: React.FC = () => {
     // Calculate winnings
     if (currentBet && currentBet.horseId === winningHorse.id) {
       const winnings = currentBet.amount * winningHorse.odds;
+      
+      // Record winnings in backend
+      if (connectedAccount && sessionId) {
+        try {
+          await paymentAPI.recordWinnings(
+            connectedAccount,
+            winnings,
+            `race_${Date.now()}`,
+            sessionId
+          );
+          console.log("Winnings recorded in backend");
+        } catch (error) {
+          console.error("Failed to record winnings:", error);
+        }
+      }
+      
       setRaceHistory(prev => [
         `🏆 Won ${winnings.toFixed(2)} CCD on ${winningHorse.name}!`,
         ...prev.slice(0, 4)
       ]);
-      alert(`🎉 Congratulations! ${winningHorse.name} won! You would have earned ${winnings.toFixed(2)} CCD!`);
+      alert(`🎉 Congratulations! ${winningHorse.name} won! You earned ${winnings.toFixed(2)} CCD!`);
     } else {
       setRaceHistory(prev => [
         `❌ Lost ${currentBet?.amount.toFixed(2)} CCD - ${winningHorse.name} won`,
@@ -205,7 +319,7 @@ export const HorseRacing: React.FC = () => {
 
     setCurrentBet(null);
     
-    // Refresh balance after race (in real implementation, this would be updated by smart contract)
+    // Refresh balance after race
     fetchBalance();
   };
 
