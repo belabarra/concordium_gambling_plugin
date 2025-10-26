@@ -39,7 +39,7 @@ class Notification(Base):
     sent_at = Column(DateTime, nullable=True)
     read_at = Column(DateTime, nullable=True)
     status = Column(SQLEnum(NotificationStatus), nullable=False, default=NotificationStatus.PENDING)
-    metadata = Column(JSON, nullable=True)
+    extra_data = Column(JSON, nullable=True)
     priority = Column(String, default='normal')  # low, normal, high, critical
 
     def __repr__(self):
@@ -56,7 +56,7 @@ class Notification(Base):
             'sent_at': self.sent_at.isoformat() if self.sent_at else None,
             'read_at': self.read_at.isoformat() if self.read_at else None,
             'status': self.status.value if isinstance(self.status, Enum) else self.status,
-            'metadata': self.metadata,
+            'extra_data': self.extra_data,
             'priority': self.priority
         }
 

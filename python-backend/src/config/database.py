@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from config.settings import settings
+from src.config.settings import settings
 
 # Create database engine
 engine = create_engine(
@@ -26,7 +26,7 @@ def get_db():
 # Function to initialize database
 def init_db():
     """Initialize database tables"""
-    from models import user, transaction, limit, cooldown, self_exclusion
-    from models import session, notification, risk_assessment, audit_log, operator
-    
+    from src.models import user, transaction, limit, cooldown, self_exclusion
+    from src.models import session, notification, risk_assessment, audit_log, operator
+
     Base.metadata.create_all(bind=engine)

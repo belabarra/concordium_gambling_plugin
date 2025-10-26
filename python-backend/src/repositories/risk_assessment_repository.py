@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models.risk_assessment import RiskAssessment, RiskLevel
+from src.models.risk_assessment import RiskAssessment, RiskLevel
 from typing import List, Optional
 from datetime import datetime
 

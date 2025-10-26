@@ -2,8 +2,8 @@ from datetime import datetime, timedelta
 from typing import Dict, List
 import uuid
 from sqlalchemy.orm import Session
-from models.notification import Notification, NotificationType, NotificationStatus
-from repositories.notification_repository import NotificationRepository
+from src.models.notification import Notification, NotificationType, NotificationStatus
+from src.repositories.notification_repository import NotificationRepository
 
 class NotificationService:
     """Sends notifications to users and operators"""

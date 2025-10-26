@@ -6,7 +6,16 @@
       "Bash(npm install:*)",
       "Bash(npm run build:*)",
       "Bash(npm start)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(taskkill /F /PID 2508)",
+      "Bash(taskkill //F //PID 2508)",
+      "Bash(pip install:*)",
+      "Bash(set:*)",
+      "Bash(python -m uvicorn:*)",
+      "Bash(timeout:*)",
+      "Bash(python:*)",
+      "Bash(npm run dev:*)",
+      "Bash(dir /a nul)"
     ],
     "deny": [],
     "ask": []

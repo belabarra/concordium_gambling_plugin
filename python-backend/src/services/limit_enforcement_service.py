@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 from typing import Dict, Optional
 from sqlalchemy.orm import Session
-from models.limit import Limit
-from models.transaction import Transaction
+from src.models.limit import Limit
+from src.models.transaction import Transaction
 
 class LimitEnforcementService:
     def __init__(self, db: Session):

@@ -1,10 +1,10 @@
 from datetime import datetime
 from typing import List, Optional, Dict
 from sqlalchemy.orm import Session
-from models.user import User
-from repositories.user_repository import UserRepository
-from services.blockchain_integration_service import BlockchainIntegrationService
-from services.audit_service import AuditService
+from src.models.user import User
+from src.repositories.user_repository import UserRepository
+from src.services.blockchain_integration_service import BlockchainIntegrationService
+from src.services.audit_service import AuditService
 
 class UserService:
     def __init__(self, db: Session):

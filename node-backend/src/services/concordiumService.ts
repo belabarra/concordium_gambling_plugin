@@ -25,17 +25,27 @@ class ConcordiumService {
   constructor() {
     // Initialize the gRPC client to connect to Concordium testnet
     // gRPC = Google Remote Procedure Call (a way to communicate with blockchain nodes)
-    // For Node.js, we use ConcordiumGRPCNodeClient with insecure credentials (for testnet)
-    // In production, you'd use SSL credentials
-    this.client = new ConcordiumGRPCNodeClient(
-      CONCORDIUM_TESTNET_URL,
-      CONCORDIUM_TESTNET_PORT,
-      credentials.createInsecure(), // Insecure credentials for testnet
-      { timeout: 15000 } // 15 second timeout for requests
-    );
 
-    console.log('✅ Concordium gRPC client initialized');
-    console.log(`   Connected to: ${CONCORDIUM_TESTNET_URL}:${CONCORDIUM_TESTNET_PORT}`);
+    // IMPORTANT: Concordium public testnet requires SSL/TLS credentials
+    // We use credentials.createSsl() for secure connection
+    // This is different from running a local node where you'd use createInsecure()
+
+    try {
+      this.client = new ConcordiumGRPCNodeClient(
+        CONCORDIUM_TESTNET_URL,
+        CONCORDIUM_TESTNET_PORT,
+        credentials.createSsl(), // SSL credentials for public testnet
+        { timeout: 15000 } // 15 second timeout for requests
+      );
+
+      console.log('✅ Concordium gRPC client initialized');
+      console.log(`   Connected to: ${CONCORDIUM_TESTNET_URL}:${CONCORDIUM_TESTNET_PORT}`);
+      console.log(`   Using SSL/TLS for secure connection`);
+
+    } catch (error) {
+      console.error('❌ Failed to initialize Concordium client:', error);
+      throw error;
+    }
   }
 
   /**
