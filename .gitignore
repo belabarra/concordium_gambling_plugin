@@ -14,7 +14,6 @@ env/
 ENV/
 
 # IDE
-.vscode/
 .idea/
 *.swp
 *.swo
@@ -32,7 +31,6 @@ build/
 responsible_gambling.db
 
 # Environment files
-.env.local
 .env.*.local
 
 # Logs
@@ -57,3 +55,4 @@ com4
 lpt1
 lpt2
 lpt3
+config.bat
