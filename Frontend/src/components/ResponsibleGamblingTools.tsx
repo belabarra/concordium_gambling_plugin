@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useResponsibleGambling } from '../context/ResponsibleGamblingContext';
 import { useWallet } from '../context/WalletContext';
+import './ResponsibleGamblingTools.css';
+import './ResponsibleGamblingTools.css';
 
 export const ResponsibleGamblingTools: React.FC = () => {
   const { 

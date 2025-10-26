@@ -7,8 +7,16 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-concordium-std = "10.0"
+concordium-std = "10.1"
 
 [features]
 default = ["std"]
 std = ["concordium-std/std"]
+
+# Build settings for smart contract
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
+codegen-units = 1
+overflow-checks = true
