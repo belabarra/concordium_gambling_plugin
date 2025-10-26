@@ -1,6 +1,4 @@
-import axios from "axios";
+// Placeholder for future models
+// This file is currently not used
 
-
-const concordium = (output:object): object => {
-
-}
+export {};
