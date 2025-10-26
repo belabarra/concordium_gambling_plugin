@@ -36,15 +36,34 @@ Returns total payouts processed by the contract.
 
 ## Building
 
+**Important**: This contract requires Rust 1.73.0 for compatibility with Concordium's build tools. The `rust-toolchain` file in this directory ensures the correct version is used.
+
 Install Rust and cargo-concordium:
 ```bash
-rustup target add wasm32-unknown-unknown
+# Install rustup if you haven't already
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Install cargo-concordium
 cargo install --locked cargo-concordium
+
+# The wasm32 target will be automatically installed when you build
 ```
 
 Build the contract:
 ```bash
-cargo concordium build --out payout_contract.wasm.v1
+cargo concordium build
+```
+
+The built contract will be in `concordium-out/module.wasm.v1`
+
+### Build Output
+- **Module size**: ~26 KB
+- **Schema size**: 131 B (embedded)
+- **Location**: `concordium-out/module.wasm.v1`
+
+### Verifiable Build (Recommended for Production)
+```bash
+cargo concordium build --verifiable
 ```
 
 ## Testing

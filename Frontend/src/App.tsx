@@ -1,7 +1,9 @@
-import React from "react";
+import { useState } from "react";
 import { Header } from "./components/Header";
 import { HorseRacing } from "./components/HorseRacing";
+import { ResponsibleGamblingTools } from "./components/ResponsibleGamblingTools";
 import { WalletContextProvider } from "./context/WalletContext";
+import { ResponsibleGamblingProvider } from "./context/ResponsibleGamblingContext";
 import { 
   WithWalletConnector, 
   WalletConnectionProps,
@@ -10,14 +12,33 @@ import {
 import "./App.css";
 
 function AppContent(props: WalletConnectionProps) {
+  const [activeView, setActiveView] = useState<'racing' | 'rg-tools'>('racing');
+
   return (
     <WalletContextProvider>
-      <div className="app">
-        <Header walletConnectionProps={props} />
-        <main className="main-content">
-          <HorseRacing walletConnectionProps={props} />
-        </main>
-      </div>
+      <ResponsibleGamblingProvider>
+        <div className="app">
+          <Header walletConnectionProps={props} />
+          <nav className="app-nav">
+            <button 
+              className={activeView === 'racing' ? 'active' : ''}
+              onClick={() => setActiveView('racing')}
+            >
+              🐎 Horse Racing
+            </button>
+            <button 
+              className={activeView === 'rg-tools' ? 'active' : ''}
+              onClick={() => setActiveView('rg-tools')}
+            >
+              🛡️ Responsible Gambling
+            </button>
+          </nav>
+          <main className="main-content">
+            {activeView === 'racing' && <HorseRacing walletConnectionProps={props} />}
+            {activeView === 'rg-tools' && <ResponsibleGamblingTools />}
+          </main>
+        </div>
+      </ResponsibleGamblingProvider>
     </WalletContextProvider>
   );
 }

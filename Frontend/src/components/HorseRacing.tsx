@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useWallet } from "../context/WalletContext";
+import { useResponsibleGambling } from "../context/ResponsibleGamblingContext";
 import { Trophy, Coins, Play, RotateCcw, RefreshCw } from "lucide-react";
+import { paymentAPI, userAPI } from "../services/api";
 import { 
   AccountAddress, 
   CcdAmount,
@@ -35,6 +37,7 @@ interface HorseRacingProps {
 
 export const HorseRacing: React.FC<HorseRacingProps> = ({ walletConnectionProps }) => {
   const { connectedAccount, isAgeVerified, provider } = useWallet();
+  const { checkLimit, isExcluded, startSession, endSession, activeSession } = useResponsibleGambling();
   const { network } = walletConnectionProps;
   const grpcClient = useGrpcClient(network);
   
@@ -58,6 +61,8 @@ export const HorseRacing: React.FC<HorseRacingProps> = ({ walletConnectionProps 
   const [raceHistory, setRaceHistory] = useState<string[]>([]);
   const [isSendingTransaction, setIsSendingTransaction] = useState(false);
   const [transactionHash, setTransactionHash] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [userId, setUserId] = useState<string | null>(null);
   
   const raceIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const finishLine = 100;
@@ -77,10 +82,7 @@ export const HorseRacing: React.FC<HorseRacingProps> = ({ walletConnectionProps 
     
     // Check if we have a cached balance for this account
     const cachedBalanceKey = `balance_${connectedAccount}`;
-    const cached = localStorage.getItem(cachedBalanceKey);
     
-    
-
     try {
       // Fetch from blockchain using the gRPC client from react-components
       const accountAddress = AccountAddress.fromBase58(connectedAccount);
@@ -117,10 +119,47 @@ export const HorseRacing: React.FC<HorseRacingProps> = ({ walletConnectionProps 
     }
   };
 
+  // Register or get user ID
+  const initializeUser = async () => {
+    if (!connectedAccount) return;
+
+    try {
+      // Check if user already exists in localStorage
+      let storedUserId = localStorage.getItem('userId');
+      
+      if (!storedUserId) {
+        // Register new user
+        console.log('Registering new user...');
+        const response = await userAPI.register(connectedAccount);
+        
+        if (response.data.success) {
+          storedUserId = response.data.user.user_id;
+          if (storedUserId) {
+            localStorage.setItem('userId', storedUserId);
+            console.log('User registered:', storedUserId);
+          }
+        }
+      }
+      
+      if (storedUserId) {
+        setUserId(storedUserId);
+        
+        // Start gambling session
+        if (!activeSession) {
+          await startSession();
+          console.log('Gambling session started');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to initialize user:', error);
+    }
+  };
+
   // Fetch balance when account or gRPC client changes
   useEffect(() => {
     if (connectedAccount && isAgeVerified && grpcClient) {
       fetchBalance();
+      initializeUser();
     } else {
       setBalance(null);
     }
@@ -183,10 +222,23 @@ export const HorseRacing: React.FC<HorseRacingProps> = ({ walletConnectionProps 
     }
 
     const amount = parseFloat(betAmount);
-//     if (balance === null || amount > balance) {
-//       alert("Insufficient balance!");
-//       return;
-//     }
+
+    // Check if user is self-excluded
+    if (isExcluded) {
+      alert("❌ You are currently self-excluded from gambling.");
+      return;
+    }
+
+    // Check spending limits
+    try {
+      const limitAllowed = await checkLimit(amount);
+      if (!limitAllowed) {
+        alert("❌ This bet would exceed your spending limit. Please adjust your bet or modify your limits in the Responsible Gambling section.");
+        return;
+      }
+    } catch (error) {
+      console.error("Failed to check limit:", error);
+    }
 
     setIsSendingTransaction(true);
     
@@ -266,7 +318,7 @@ export const HorseRacing: React.FC<HorseRacingProps> = ({ walletConnectionProps 
   };
 
   // Handle race end
-  const handleRaceEnd = (winningHorse: Horse) => {
+  const handleRaceEnd = async (winningHorse: Horse) => {
     if (raceIntervalRef.current) {
       clearInterval(raceIntervalRef.current);
     }
@@ -277,11 +329,61 @@ export const HorseRacing: React.FC<HorseRacingProps> = ({ walletConnectionProps 
     // Calculate winnings
     if (currentBet && currentBet.horseId === winningHorse.id) {
       const winnings = currentBet.amount * winningHorse.odds;
-      setRaceHistory(prev => [
-        `🏆 Won ${winnings.toFixed(2)} CCD on ${winningHorse.name}!`,
-        ...prev.slice(0, 4)
-      ]);
-      alert(`🎉 Congratulations! ${winningHorse.name} won! You would have earned ${winnings.toFixed(2)} CCD!`);
+      
+      // Process winnings through backend API
+      try {
+        const storedUserId = localStorage.getItem('userId');
+        const sessionId = activeSession?.session_id || localStorage.getItem('activeSessionId');
+        
+        if (storedUserId) {
+          console.log('Processing winnings:', { userId: storedUserId, amount: winnings });
+          
+          const response = await paymentAPI.recordWinnings(
+            storedUserId,
+            winnings,
+            `race_${Date.now()}`,
+            sessionId || 'default_session'
+          );
+          
+          if (response.data.success) {
+            console.log('✅ Winnings processed successfully:', response.data);
+            
+            setRaceHistory(prev => [
+              `🏆 Won ${winnings.toFixed(2)} CCD on ${winningHorse.name}! (Transferred to wallet)`,
+              ...prev.slice(0, 4)
+            ]);
+            
+            alert(
+              `🎉 Congratulations! ${winningHorse.name} won!\n\n` +
+              `You won ${winnings.toFixed(2)} CCD!\n` +
+              `The winnings have been transferred to your Concordium wallet.\n` +
+              `Transaction Hash: ${response.data.tx_hash?.substring(0, 8)}...${response.data.tx_hash?.substring(response.data.tx_hash.length - 6) || 'processing'}`
+            );
+          } else {
+            throw new Error(response.data.error || 'Failed to process winnings');
+          }
+        } else {
+          console.warn('User ID not found, displaying winnings without processing');
+          setRaceHistory(prev => [
+            `🏆 Won ${winnings.toFixed(2)} CCD on ${winningHorse.name}!`,
+            ...prev.slice(0, 4)
+          ]);
+          alert(`🎉 Congratulations! ${winningHorse.name} won! You earned ${winnings.toFixed(2)} CCD!`);
+        }
+      } catch (error: any) {
+        console.error('Failed to process winnings:', error);
+        setRaceHistory(prev => [
+          `🏆 Won ${winnings.toFixed(2)} CCD on ${winningHorse.name}! (Processing pending)`,
+          ...prev.slice(0, 4)
+        ]);
+        alert(
+          `🎉 Congratulations! ${winningHorse.name} won!\n\n` +
+          `You won ${winnings.toFixed(2)} CCD!\n` +
+          `Note: There was an issue processing the payout automatically.\n` +
+          `Error: ${error.message}\n\n` +
+          `Please contact support with your race details.`
+        );
+      }
     } else {
       setRaceHistory(prev => [
         `❌ Lost ${currentBet?.amount.toFixed(2)} CCD - ${winningHorse.name} won`,
@@ -292,8 +394,8 @@ export const HorseRacing: React.FC<HorseRacingProps> = ({ walletConnectionProps 
 
     setCurrentBet(null);
     
-    // Refresh balance after race (in real implementation, this would be updated by smart contract)
-    fetchBalance();
+    // Refresh balance after race (winnings should be reflected)
+    setTimeout(() => fetchBalance(), 3000);
   };
 
   // Reset race
@@ -315,8 +417,12 @@ export const HorseRacing: React.FC<HorseRacingProps> = ({ walletConnectionProps 
       if (raceIntervalRef.current) {
         clearInterval(raceIntervalRef.current);
       }
+      // End session on unmount if active
+      if (activeSession) {
+        endSession().catch(err => console.error('Failed to end session:', err));
+      }
     };
-  }, []);
+  }, [activeSession, endSession]);
 
   if (!connectedAccount) {
     return (
