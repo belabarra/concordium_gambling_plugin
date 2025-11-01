@@ -126,14 +126,212 @@ python-backend
 ### Health Check
 - `GET /api/v1/health` - Service health status
 
-## Features
+## 🔧 Service Documentation
 
-- **User Management**: Register, retrieve, and update user data.
-- **Transaction Tracking**: Record and monitor user transactions.
-- **Limit Enforcement**: Enforce spending limits based on user data.
-- **Cooldown Management**: Manage cool-down periods to restrict gambling activities.
-- **Self-Exclusion Registry**: Allow users to opt-out of gambling across platforms.
-- **Blockchain Integration**: Verify user identities and transactions with a Node.js service.
+### PaymentService (`services/payment_service.py`)
+
+**Key Methods:**
+
+- **`deposit(user_id: str, amount: float, session_id: str) -> Dict`**
+  ```python
+  # Records deposit transaction
+  # Calls wallet_service to update balance
+  # Returns transaction record
+  # Raises ValueError if amount is negative or user not found
+  ```
+
+- **`withdraw(user_id: str, amount: float) -> Dict`**
+  ```python
+  # Processes withdrawal request
+  # Verifies sufficient balance exists
+  # Updates wallet balance
+  # Returns transaction details
+  ```
+
+- **`process_winnings(user_id: str, session_id: str, amount: float) -> Dict`**
+  ```python
+  # Handles payout of gambling winnings
+  # Retrieves user's wallet address from wallet_service
+  # Calls smart_contract_service.payout_winnings() to transfer CCD
+  # Records transaction in database
+  # Returns payout transaction details including blockchain hash
+  ```
+
+- **`get_transaction_history(user_id: str) -> List[Dict]`**
+  ```python
+  # Retrieves all transactions for a user
+  # Includes deposits, withdrawals, bets, winnings
+  # Sorted by timestamp (newest first)
+  ```
+
+### LimitEnforcementService (`services/limit_enforcement_service.py`)
+
+**Key Methods:**
+
+- **`set_limit(user_id: str, limit_type: str, amount: float) -> Dict`**
+  ```python
+  # Sets spending limit (daily/weekly/monthly/session)
+  # Validates limit_type in ['daily', 'weekly', 'monthly', 'session']
+  # Updates or creates limit record in database
+  # Returns updated limit configuration
+  ```
+
+- **`check_limit(user_id: str, bet_amount: float) -> Dict`**
+  ```python
+  # Validates bet against all active limits
+  # Calculates current spending for each period
+  # Returns {"allowed": bool, "reason": str, "limits_status": {...}}
+  # If allowed=False, includes which limit was exceeded
+  ```
+
+- **`get_current_limits(user_id: str) -> Dict`**
+  ```python
+  # Retrieves all limits for user
+  # Returns dict with daily_limit, weekly_limit, monthly_limit, session_limit
+  # Also includes current spending for each period
+  ```
+
+- **`calculate_remaining_limit(user_id: str, period: str) -> float`**
+  ```python
+  # Calculates how much user can still spend in period
+  # Returns remaining amount (limit - current_spending)
+  ```
+
+### SessionService (`services/session_service.py`)
+
+**Key Methods:**
+
+- **`start_session(user_id: str) -> Dict`**
+  ```python
+  # Creates new gambling session
+  # Checks if user has active session (ends it if found)
+  # Records session start time
+  # Returns session_id and start_time
+  ```
+
+- **`end_session(session_id: str) -> Dict`**
+  ```python
+  # Terminates gambling session
+  # Calculates session duration
+  # Records total bets, wins, losses for session
+  # Returns session summary statistics
+  ```
+
+- **`check_session_duration(session_id: str) -> Dict`**
+  ```python
+  # Checks if session exceeds time limit
+  # Returns {"exceeded": bool, "duration_minutes": int, "limit_minutes": int}
+  # Used for mandatory break enforcement
+  ```
+
+- **`get_session_stats(session_id: str) -> Dict`**
+  ```python
+  # Retrieves detailed session statistics
+  # Includes total_wagered, total_won, net_profit_loss, bet_count, duration
+  ```
+
+### SmartContractService (`services/smart_contract_service.py`)
+
+**Key Methods:**
+
+- **`payout_winnings(wallet_address: str, amount: float) -> Dict`**
+  ```python
+  # Calls deployed smart contract's payout function
+  # Transfers CCD from contract to winner's wallet
+  # Currently in MOCK mode (returns simulated transaction)
+  # Production mode sends real blockchain transaction via concordium-client
+  # Returns {"tx_hash": str, "amount": float, "recipient": str, "status": str}
+  ```
+
+- **`get_total_payouts() -> float`**
+  ```python
+  # Queries smart contract for total CCD paid out
+  # Calls contract's view() function
+  # Returns total amount distributed to winners
+  ```
+
+- **`configure_contract(contract_address: str, contract_name: str) -> None`**
+  ```python
+  # Updates service configuration with deployed contract details
+  # Sets CONTRACT_ADDRESS and CONTRACT_NAME environment variables
+  # Required before payout_winnings can execute
+  ```
+
+### SelfExclusionService (`services/self_exclusion_service.py`)
+
+**Key Methods:**
+
+- **`request_exclusion(user_id: str, duration_days: int) -> Dict`**
+  ```python
+  # Adds user to self-exclusion registry
+  # Calculates exclusion end date
+  # Prevents gambling access across all platforms
+  # Returns exclusion record with end_date
+  ```
+
+- **`check_exclusion_status(user_id: str) -> Dict`**
+  ```python
+  # Verifies if user is currently self-excluded
+  # Returns {"excluded": bool, "excluded_until": datetime}
+  # Called before allowing any gambling activity
+  ```
+
+- **`remove_exclusion(user_id: str) -> Dict`**
+  ```python
+  # Removes user from exclusion registry
+  # Only allowed after exclusion period expires
+  # Returns confirmation message
+  ```
+
+### BehaviorAnalyticsService (`services/behavior_analytics_service.py`)
+
+**Key Methods:**
+
+- **`calculate_risk_score(user_id: str) -> int`**
+  ```python
+  # Analyzes gambling patterns to compute risk score (0-100)
+  # Factors: spending escalation, session frequency, time patterns, limit violations
+  # Returns score with risk level (low/medium/high/critical)
+  ```
+
+- **`analyze_spending_pattern(user_id: str) -> Dict`**
+  ```python
+  # Examines spending trends over time
+  # Detects escalating behavior
+  # Returns trend analysis with warnings if concerning
+  ```
+
+- **`detect_time_anomalies(user_id: str) -> List[Dict]`**
+  ```python
+  # Identifies unusual gambling times (late night, early morning)
+  # Flags sessions during abnormal hours
+  # Returns list of concerning time patterns
+  ```
+
+### WalletService (`services/wallet_service.py`)
+
+**Key Methods:**
+
+- **`get_or_create_wallet(user_id: str, concordium_address: str) -> Dict`**
+  ```python
+  # Retrieves existing wallet or creates new record
+  # Links Concordium blockchain address to user
+  # Returns wallet_id and concordium_address
+  ```
+
+- **`get_wallet_by_user(user_id: str) -> Dict`**
+  ```python
+  # Fetches wallet details for user
+  # Returns concordium_address and wallet_id
+  # Raises ValueError if wallet not found
+  ```
+
+- **`update_balance(user_id: str, new_balance: float) -> Dict`**
+  ```python
+  # Updates tracked wallet balance
+  # Note: Actual blockchain balance is authoritative
+  # This tracks last known balance for quick reference
+  ```
 
 ## Setup Instructions
 

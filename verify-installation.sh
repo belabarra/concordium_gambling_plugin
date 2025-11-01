@@ -81,10 +81,10 @@ check_file "node-backend/package.json" "Node.js package.json"
 check_file "node-backend/src/server.ts" "Node.js server file"
 
 # Check Frontend
-check_dir "Frontend" "Frontend directory"
-check_file "Frontend/package.json" "Frontend package.json"
-check_file "Frontend/src/App.tsx" "Frontend App component"
-check_file "Frontend/.env" "Frontend environment file"
+check_dir "frontend" "frontend directory"
+check_file "frontend/package.json" "frontend package.json"
+check_file "frontend/src/App.tsx" "frontend App component"
+check_file "frontend/.env" "frontend environment file"
 
 # Check Contracts
 check_dir "contracts" "Contracts directory"
@@ -95,10 +95,10 @@ check_file "contracts/src/lib.rs" "Smart contract source"
 echo ""
 echo "🔗 Checking Integration Files..."
 echo ""
-check_file "Frontend/src/services/api.ts" "API service"
-check_file "Frontend/src/context/PaymentContext.tsx" "Payment context"
-check_file "Frontend/src/context/ResponsibleGamblingContext.tsx" "RG context"
-check_file "Frontend/src/context/WalletContext.tsx" "Wallet context"
+check_file "frontend/src/services/api.ts" "API service"
+check_file "frontend/src/context/PaymentContext.tsx" "Payment context"
+check_file "frontend/src/context/ResponsibleGamblingContext.tsx" "RG context"
+check_file "frontend/src/context/WalletContext.tsx" "Wallet context"
 
 # Check Python Services
 check_file "python-backend/src/services/payment_service.py" "Payment service"
@@ -137,11 +137,11 @@ else
     echo -e "${YELLOW}⚠${NC} Node.js backend dependencies not installed (run: cd node-backend && npm install)"
 fi
 
-if [ -d "Frontend/node_modules" ]; then
+if [ -d "frontend/node_modules" ]; then
     echo -e "${GREEN}✓${NC} Frontend dependencies installed"
     ((PASSED++))
 else
-    echo -e "${YELLOW}⚠${NC} Frontend dependencies not installed (run: cd Frontend && npm install)"
+    echo -e "${YELLOW}⚠${NC} Frontend dependencies not installed (run: cd frontend && npm install)"
 fi
 
 # Check if services are running
