@@ -10,7 +10,7 @@
 - Smart contract event subscriptions
 - Custom RPC method implementations
 
-**Note:** This backend is **optional**. The main Python backend (`python-backend/`) handles all core application logic. Use this Node.js service only if you need advanced blockchain features not available in the Python backend.
+**Note:** This backend is **optional**. The main Python backend (`python_backend/`) handles all core application logic. Use this Node.js service only if you need advanced blockchain features not available in the Python backend.
 
 ## 🎯 When to Use This Backend
 
@@ -30,7 +30,7 @@ Use this Node.js backend if you need:
 ## 📁 Project Structure
 
 ```
-node-backend/
+node_backend/
 ├── src/
 │   ├── server.ts                 # Express server entry point
 │   ├── controllers/              # Request handlers
@@ -71,8 +71,8 @@ node-backend/
 ### Installation
 
 ```bash
-# Navigate to node-backend directory
-cd node-backend
+# Navigate to node_backend directory
+cd node_backend
 
 # Install dependencies
 npm install
@@ -315,7 +315,7 @@ This Node.js service can complement the Python backend:
 npm install -g pm2
 
 # Start server with PM2
-pm2 start dist/server.js --name concordium-node-backend
+pm2 start dist/server.js --name concordium-node_backend
 
 # Configure auto-restart on crashes
 pm2 startup
