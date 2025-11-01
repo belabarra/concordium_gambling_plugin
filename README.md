@@ -31,7 +31,7 @@ This is a **4-service architecture** with frontend, backend, blockchain service,
 - Responsible gambling settings interface
 - Session management and limit tracking
 
-**Location**: `frontend/`
+**Location**: `frontend_main/`
 **Tech Stack**: React, TypeScript, Vite, @concordium/web-sdk, @concordium/react-components
 
 ### 2. Python Backend (FastAPI) - Port 8000
@@ -44,7 +44,7 @@ This is a **4-service architecture** with frontend, backend, blockchain service,
 - Behavioral analytics and risk scoring
 - Smart contract integration for payouts
 
-**Location**: `python-backend/`
+**Location**: `python_backend/`
 **Tech Stack**: Python 3.10+, FastAPI, SQLAlchemy, SQLite/PostgreSQL
 
 ### 3. Node.js Backend (Express) - Port 3000 [OPTIONAL]
@@ -54,7 +54,7 @@ This is a **4-service architecture** with frontend, backend, blockchain service,
 - Smart contract event monitoring
 - WebSocket connections for real-time updates
 
-**Location**: `node-backend/`
+**Location**: `node_backend/`
 **Tech Stack**: Node.js 16+, Express, TypeScript
 **Note**: Optional service - main functionality works without it
 
@@ -72,7 +72,7 @@ This is a **4-service architecture** with frontend, backend, blockchain service,
 
 ```
 concordium_gambling_plugin/
-├── frontend/                        # React frontend application
+├── frontend_main/                   # React frontend application
 │   ├── src/
 │   │   ├── components/              # UI components
 │   │   │   ├── Header.tsx          # Navigation header with wallet
@@ -94,7 +94,7 @@ concordium_gambling_plugin/
 │   ├── vite.config.ts
 │   └── README.md                    # Frontend documentation
 │
-├── python-backend/                  # FastAPI backend service
+├── python_backend/                  # FastAPI backend service
 │   ├── src/
 │   │   ├── main.py                  # FastAPI app entry point
 │   │   ├── api/
@@ -135,7 +135,7 @@ concordium_gambling_plugin/
 │   │   └── config.toml
 │   └── README.md                    # Contract documentation
 │
-├── node-backend/                    # Optional Node.js service
+├── node_backend/                    # Optional Node.js service
 │   ├── src/
 │   │   ├── server.ts               # Express server
 │   │   ├── controllers/
@@ -252,7 +252,7 @@ cd concordium_gambling_plugin
 #### 2. Setup Python Backend
 
 ```bash
-cd python-backend
+cd python_backend
 
 # Create and activate virtual environment
 python -m venv venv
@@ -278,7 +278,7 @@ uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 
 ```bash
 # In a new terminal
-cd frontend
+cd frontend_main
 
 # Install dependencies
 npm install
@@ -311,7 +311,7 @@ npm run dev
 ### Optional: Setup Node.js Backend
 
 ```bash
-cd node-backend
+cd node_backend
 npm install
 npm run dev
 ```
@@ -339,7 +339,7 @@ concordium-client contract init <module-hash> \
     --sender <your-account> \
     --energy 10000
 
-# Update python-backend/.env with contract address
+# Update python_backend/.env with contract address
 CONTRACT_ADDRESS=<12345,0>
 CONTRACT_NAME=gambling_payout
 SMART_CONTRACT_MODE=production
@@ -467,7 +467,7 @@ CONCORDIUM_NODE_PORT=20000
 ### Python Backend Tests
 
 ```bash
-cd python-backend
+cd python_backend
 
 # Run all tests
 pytest tests/
@@ -485,7 +485,7 @@ pytest tests/ -v
 ### Frontend Tests (if implemented)
 
 ```bash
-cd frontend
+cd frontend_main
 npm test
 ```
 
@@ -573,14 +573,14 @@ heroku create concordium-gambling-backend
 git push heroku main
 
 # Or use Docker
-docker build -t gambling-backend python-backend/
+docker build -t gambling-backend python_backend/
 docker run -p 8000:8000 --env-file .env gambling-backend
 ```
 
 **Frontend:**
 
 ```bash
-cd frontend
+cd frontend_main
 
 # Build for production
 npm run build
@@ -623,10 +623,10 @@ docker-compose down
 
 For comprehensive documentation on each component:
 
-- **Frontend**: See [`frontend/README.md`](frontend/README.md) for React components, wallet integration, and UI details
-- **Python Backend**: See [`python-backend/README.md`](python-backend/README.md) for API services, database models, and business logic
+- **Frontend**: See [`frontend_main/README.md`](frontend_main/README.md) for React components, wallet integration, and UI details
+- **Python Backend**: See [`python_backend/README.md`](python_backend/README.md) for API services, database models, and business logic
 - **Smart Contracts**: See [`contracts/README.md`](contracts/README.md) for contract methods, deployment, and Rust details
-- **Node Backend**: See [`node-backend/README.md`](node-backend/README.md) for optional blockchain service features
+- **Node Backend**: See [`node_backend/README.md`](node_backend/README.md) for optional blockchain service features
 
 ## 🎯 Key Technologies
 

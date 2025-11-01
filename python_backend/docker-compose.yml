@@ -3,23 +3,15 @@ version: '3.8'
 services:
   # Node.js Concordium Service
   concordium-service:
-    build: ../node-backend
-    container_name: concordium-service
+    build: ../node_backend
+    container_name: concordium_service
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=development
-      - PORT=3000
+      PORT: 3000
+      CONCORDIUM_NODE_URL: https://grpc.testnet.concordium.com:20000
     volumes:
-      - ../node-backend/src:/app/src
-    command: npm run dev
-    networks:
-      - gambling-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      - ../node_backend/src:/app/src
 
   # Python Backend
   python-backend:
