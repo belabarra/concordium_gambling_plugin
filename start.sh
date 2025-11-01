@@ -68,7 +68,7 @@ else
     # Start Frontend
     echo ""
     echo "⚛️  Starting Frontend..."
-    cd Frontend
+    cd frontend
     
     if [ ! -d "node_modules" ]; then
         echo "Installing dependencies..."
