@@ -23,7 +23,7 @@ services:
 
   # Python Backend (FastAPI)
   python-backend:
-    build: ./python-backend
+    build: ./python_backend
     container_name: concordium_python_backend
     environment:
       DATABASE_URL: postgresql://gambling_user:gambling_password@postgres:5432/responsible_gambling
@@ -34,7 +34,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./python-backend:/app
+      - ./python_backend:/app
     depends_on:
       postgres:
         condition: service_healthy
@@ -44,7 +44,7 @@ services:
 
   # Node.js Backend (Concordium Integration)
   node-backend:
-    build: ./node-backend
+    build: ./node_backend
     container_name: concordium_node_backend
     environment:
       PORT: 3001
@@ -54,7 +54,7 @@ services:
     ports:
       - "3001:3001"
     volumes:
-      - ./node-backend:/app
+      - ./node_backend:/app
       - /app/node_modules
     networks:
       - concordium_network
@@ -62,7 +62,7 @@ services:
 
   # Frontend (React)
   frontend:
-    build: ./frontend
+    build: ./frontend_main
     container_name: concordium_frontend
     environment:
       REACT_APP_API_BASE_URL: http://localhost:8000/api/v1
@@ -72,7 +72,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./frontend:/app
+      - ./frontend_main:/app
       - /app/node_modules
     depends_on:
       - python-backend

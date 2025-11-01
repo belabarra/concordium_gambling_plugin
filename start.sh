@@ -34,7 +34,7 @@ else
     # Start Python backend
     echo ""
     echo "🐍 Starting Python Backend..."
-    cd python-backend
+    cd python_backend
     
     if [ ! -d "venv" ]; then
         echo "Creating virtual environment..."
@@ -53,7 +53,7 @@ else
     # Start Node.js backend
     echo ""
     echo "📦 Starting Node.js Backend..."
-    cd node-backend
+    cd node_backend
     
     if [ ! -d "node_modules" ]; then
         echo "Installing dependencies..."
